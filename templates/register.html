@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Тіркелу{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block header %}{% endblock %}
+
+{% block content %}
+<main class="auth">
+    <aside class="auth-brand">
+        <a href="{{ url_for('about') }}" aria-label="Tenge туралы">
+            <img class="auth-logo" src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Tenge">
+        </a>
+        <div>
+            <h2>Бір минутта бастаңыз.</h2>
+            <p>Аккаунт құрып, алғашқы операцияңды қос. Әр пайдаланушы тек өз мәліметін көреді.</p>
+        </div>
+        <p class="auth-foot">Құпиясөз хэштелген түрде сақталады.</p>
+    </aside>
+
+    <section class="auth-panel">
+        <div class="auth-box">
+            <h1>Аккаунт құру</h1>
+            <p class="muted">Құпиясөз кемінде 8 таңба болсын.</p>
+
+            <form class="form-grid" method="POST" action="{{ url_for('register') }}" data-register-form>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="field field-wide">
+                    <label for="username">Аты</label>
+                    <input type="text" id="username" name="username" value="{{ form.get('username', '') }}"
+                           minlength="2" maxlength="50" autocomplete="name" required autofocus>
+                </div>
+
+                <div class="field field-wide">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="{{ form.get('email', '') }}"
+                           maxlength="254" autocomplete="email" required>
+                </div>
+
+                <div class="field">
+                    <label for="password">Құпиясөз</label>
+                    <input type="password" id="password" name="password" minlength="8" maxlength="128"
+                           autocomplete="new-password" required>
+                </div>
+
+                <div class="field">
+                    <label for="password_confirm">Қайталаңыз</label>
+                    <input type="password" id="password_confirm" name="password_confirm" minlength="8"
+                           maxlength="128" autocomplete="new-password" required>
+                </div>
+
+                <button class="btn field-wide" type="submit">Тіркелу</button>
+            </form>
+
+            <p class="auth-switch">Аккаунтың бар ма? <a href="{{ url_for('login') }}">Кіру</a></p>
+        </div>
+    </section>
+</main>
+{% endblock %}

@@ -1,0 +1,128 @@
+
+.auth-page {
+    background: var(--surface);
+}
+
+.auth {
+    display: grid;
+    grid-template-columns: minmax(340px, 5fr) 6fr;
+    min-height: 100vh;
+}
+
+/* Сол жақ: қара брендтік панель */
+
+.auth-brand {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 48px;
+    padding: 48px;
+    background: var(--ink);
+    color: #fff;
+}
+
+.auth-logo {
+    width: 190px;
+    height: auto;
+}
+
+.auth-brand h2 {
+    max-width: 14ch;
+    font-size: clamp(28px, 3.4vw, 44px);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.1;
+}
+
+.auth-brand div p {
+    max-width: 34ch;
+    margin-top: 14px;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 16px;
+}
+
+.auth-foot {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Оң жақ: форма */
+
+.auth-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    background: var(--bg);
+}
+
+.auth-box {
+    width: 100%;
+    max-width: 420px;
+    padding: 36px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.auth-box h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+.auth-box > .muted {
+    margin: 4px 0 26px;
+}
+
+.auth-switch {
+    margin-top: 22px;
+    text-align: center;
+    color: var(--muted);
+}
+
+.auth-switch a {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+@media (max-width: 860px) {
+    .auth {
+        grid-template-columns: 1fr;
+        min-height: 0;
+    }
+
+    .auth-brand {
+        gap: 20px;
+        padding: 28px 24px;
+    }
+
+    .auth-logo {
+        width: 150px;
+    }
+
+    .auth-brand h2 {
+        max-width: none;
+        font-size: 26px;
+    }
+
+    .auth-foot {
+        display: none;
+    }
+
+    .auth-panel {
+        padding: 24px 16px 40px;
+        align-items: flex-start;
+    }
+
+    .auth-box {
+        padding: 26px 22px;
+    }
+}
+
+@media (max-width: 420px) {
+    .auth-box .form-grid {
+        grid-template-columns: 1fr;
+    }
+}

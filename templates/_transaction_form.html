@@ -1,0 +1,60 @@
+{# Операция қосу формасы. Қажет: form_id, next_page; міндетті емес: form_card_id, form_cards #}
+<form class="form-grid" action="{{ url_for('add_transaction') }}" method="POST" data-transaction-form>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="next" value="{{ next_page }}">
+    {% if form_card_id %}
+        <input type="hidden" name="card_id" value="{{ form_card_id }}">
+    {% endif %}
+
+    <fieldset class="segmented field-wide">
+        <legend class="visually-hidden">Операция түрі</legend>
+        <input type="radio" id="{{ form_id }}-expense" name="type" value="expense" checked>
+        <label for="{{ form_id }}-expense">Шығыс</label>
+        <input type="radio" id="{{ form_id }}-income" name="type" value="income">
+        <label for="{{ form_id }}-income">Кіріс</label>
+    </fieldset>
+
+    <div class="field">
+        <label for="{{ form_id }}-amount">Сома, ₸</label>
+        <input type="text" id="{{ form_id }}-amount" name="amount" inputmode="decimal"
+               placeholder="2500" autocomplete="off" required>
+    </div>
+
+    <div class="field">
+        <label for="{{ form_id }}-date">Күні</label>
+        <input type="date" id="{{ form_id }}-date" name="date" value="{{ today.isoformat() }}"
+               max="{{ today.isoformat() }}" required>
+    </div>
+
+    <div class="field field-wide">
+        <label for="{{ form_id }}-category">Санат</label>
+        <select id="{{ form_id }}-category" name="category" required>
+            {% for value, label in expense_categories.items() %}
+                <option value="{{ value }}" data-type="expense">{{ label }}</option>
+            {% endfor %}
+            {% for value, label in income_categories.items() %}
+                <option value="{{ value }}" data-type="income">{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {% if form_cards %}
+    <div class="field field-wide">
+        <label for="{{ form_id }}-card">Карта <span class="optional">міндетті емес</span></label>
+        <select id="{{ form_id }}-card" name="card_id">
+            <option value="">Картасыз</option>
+            {% for card in form_cards %}
+                <option value="{{ card['id'] }}">{{ card['name'] }} **** {{ card['last_four'] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+
+    <div class="field field-wide">
+        <label for="{{ form_id }}-description">Сипаттама <span class="optional">міндетті емес</span></label>
+        <input type="text" id="{{ form_id }}-description" name="description" maxlength="300"
+               placeholder="Мысалы: түскі ас" autocomplete="off">
+    </div>
+
+    <button class="btn field-wide" type="submit">Операцияны сақтау</button>
+</form>

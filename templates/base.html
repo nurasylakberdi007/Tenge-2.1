@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Tenge{% endblock %} — Tenge</title>
+
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    {% block header %}
+    <header class="site-header">
+        <div class="site-header-inner">
+            <a class="site-logo" href="{{ url_for('index') }}" aria-label="Tenge — басты бет">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tenge">
+            </a>
+
+            <nav class="site-nav" aria-label="Негізгі навигация">
+                {% if g.user %}
+                    <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>Басты бет</a>
+                    <a href="{{ url_for('cards') }}" {% if request.endpoint == 'cards' %}aria-current="page"{% endif %}>Карталар</a>
+                {% endif %}
+                <a href="{{ url_for('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>Жоба туралы</a>
+            </nav>
+
+            <div class="site-user">
+                {% if g.user %}
+                    <span class="user-name">{{ g.user.username }}</span>
+                    <form action="{{ url_for('logout') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-ghost btn-small" type="submit">Шығу</button>
+                    </form>
+                {% else %}
+                    <a class="btn btn-ghost btn-small" href="{{ url_for('login') }}">Кіру</a>
+                    <a class="btn btn-small" href="{{ url_for('register') }}">Тіркелу</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    {% endblock %}
+
+    <div class="flash-stack" role="status" aria-live="polite">
+        {% for category, message in get_flashed_messages(with_categories=true) %}
+            <p class="flash flash-{{ category if category in ('success', 'error') else 'success' }}">{{ message }}</p>
+        {% endfor %}
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</body>
+</html>

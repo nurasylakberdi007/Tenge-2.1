@@ -1,0 +1,29 @@
+{# Операциялар тізіміндегі бір жол. Импорт: {% from "_macros.html" import transaction_row with context %} #}
+{% macro transaction_row(t, next_page="index", show_card=false) %}
+<li class="tx tx-{{ t['type'] }}">
+    <span class="tx-sign" aria-hidden="true">{{ '+' if t['type'] == 'income' else '−' }}</span>
+
+    <div class="tx-main">
+        <strong>{{ all_categories.get(t['category'], t['category']) }}</strong>
+        <span class="tx-note">{{ t['description'] or 'Сипаттамасыз' }}</span>
+        <span class="tx-meta">
+            <span>{{ 'Кіріс' if t['type'] == 'income' else 'Шығыс' }}, {{ t['created_at'] | date_kz }}</span>
+            {% if show_card and t['card_name'] %}
+                <span class="tag">{{ t['card_name'] }} **** {{ t['card_last_four'] }}</span>
+            {% endif %}
+        </span>
+    </div>
+
+    <div class="tx-side">
+        <span class="tx-amount">
+            {{ '+' if t['type'] == 'income' else '−' }}{{ t['amount'] | money }} ₸
+        </span>
+        <form class="tx-delete" action="{{ url_for('delete_transaction', transaction_id=t['id']) }}"
+              method="POST" data-confirm="Бұл операцияны жою керек пе? Баланс қайта есептеледі.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ next_page }}">
+            <button class="icon-btn" type="submit" aria-label="Операцияны жою">×</button>
+        </form>
+    </div>
+</li>
+{% endmacro %}

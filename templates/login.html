@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Кіру{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block header %}{% endblock %}
+
+{% block content %}
+<main class="auth">
+    <aside class="auth-brand">
+        <a href="{{ url_for('about') }}" aria-label="Tenge туралы">
+            <img class="auth-logo" src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Tenge">
+        </a>
+        <div>
+            <h2>Теңге тиыннан құралады</h2>
+            <p>Tenge-кіріс,шығысты бақыла және болашаққа жоспар құрастыр.</p>
+        </div>
+    </aside>
+
+    <section class="auth-panel">
+        <div class="auth-box">
+            <h1>Жүйеге кіру</h1>
+            <p class="muted">Email мен құпиясөзді енгізіңіз.</p>
+
+            <form class="form-grid" method="POST" action="{{ url_for('login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="field field-wide">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="{{ form.get('email', '') }}"
+                           autocomplete="email" required autofocus>
+                </div>
+
+                <div class="field field-wide">
+                    <label for="password">Құпиясөз</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                </div>
+
+                <button class="btn field-wide" type="submit">Кіру</button>
+            </form>
+
+            <p class="auth-switch">Аккаунтың жоқ па? <a href="{{ url_for('register') }}">Тіркелу</a></p>
+        </div>
+    </section>
+</main>
+{% endblock %}

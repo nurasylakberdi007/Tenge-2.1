@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "_macros.html" import transaction_row with context %}
+
+{% block title %}Басты бет{% endblock %}
+
+{% block content %}
+<main class="container">
+    <div class="page-head">
+        <h1>{{ g.user.username }}</h1>
+        <p class="muted">{{ today | date_kz }}</p>
+    </div>
+
+    <section class="stats" aria-label="Қаржы қорытындысы">
+        <article class="stat stat-balance">
+            <h2>Жалпы баланс</h2>
+            <p class="stat-value">{{ balance | money }} ₸</p>
+            <div class="spend">
+                <progress class="spend-meter" max="100" value="{{ spent_percent }}"></progress>
+                <p class="stat-note">
+                    {% if income > 0 %}
+                        Кірістің {{ spent_percent }}% жұмсалды
+                    {% elif expense > 0 %}
+                        Кіріс жоқ, шығыс бар
+                    {% elif cards_opening == 0 %}
+                        Кіріс пен шығыс қосылған кезде мұнда көрінеді
+                    {% endif %}
+                    {% if cards_opening > 0 %}
+                        <span class="stat-sub">Карталардың бастапқы қалдығы: {{ cards_opening | money }} ₸</span>
+                    {% endif %}
+                </p>
+            </div>
+        </article>
+
+        <article class="stat stat-income">
+            <h2>Жалпы кіріс</h2>
+            <p class="stat-value">+{{ income | money }} ₸</p>
+        </article>
+
+        <article class="stat stat-expense">
+            <h2>Жалпы шығыс</h2>
+            <p class="stat-value">−{{ expense | money }} ₸</p>
+        </article>
+    </section>
+
+    <div class="dashboard-grid">
+        <section class="panel">
+            <h2>Операция қосу</h2>
+            {% set form_id = "main" %}
+            {% set next_page = "index" %}
+            {% set form_card_id = None %}
+            {% set form_cards = cards %}
+            {% include "_transaction_form.html" %}
+        </section>
+
+        <section class="panel">
+            <h2>Операциялар тарихы</h2>
+            {% if transactions %}
+                <ul class="tx-list">
+                    {% for t in transactions %}
+                        {{ transaction_row(t, "index", true) }}
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty">
+                    <p>Операциялар жоқ.</p>
+                    <p>Сол жақтағы формаға бірінші кірісіңді немесе шығысыңды енгіз.</p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</main>
+{% endblock %}
