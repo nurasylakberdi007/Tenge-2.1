@@ -1,60 +1,98 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}Тіркелу{% endblock %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">{% endblock %}
+{% block page_title %}Тіркелу{% endblock %}
 {% block body_class %}auth-page{% endblock %}
-{% block header %}{% endblock %}
 
 {% block content %}
-<main class="auth">
-    <aside class="auth-brand">
-        <a href="{{ url_for('about') }}" aria-label="Tenge туралы">
-            <img class="auth-logo" src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Tenge">
-        </a>
-        <div>
-            <h2>Бір минутта бастаңыз.</h2>
-            <p>Аккаунт құрып, алғашқы операцияңды қос. Әр пайдаланушы тек өз мәліметін көреді.</p>
-        </div>
-        <p class="auth-foot">Құпиясөз хэштелген түрде сақталады.</p>
-    </aside>
+<div class="auth-layout auth-layout-register">
+    <section class="auth-copy" aria-labelledby="auth-copy-title">
+        <span class="pill pill-cyan">Жеке қаржыға жаңа көзқарас</span>
+        <h2 id="auth-copy-title">Әр теңгеңізге<br>айқын бағыт.</h2>
+        <p>Барлық карталарыңыз, шығындарыңыз бен жинағыңыз — бір түсінікті кеңістікте.</p>
 
-    <section class="auth-panel">
-        <div class="auth-box">
-            <h1>Аккаунт құру</h1>
-            <p class="muted">Құпиясөз кемінде 8 таңба болсын.</p>
-
-            <form class="form-grid" method="POST" action="{{ url_for('register') }}" data-register-form>
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <div class="field field-wide">
-                    <label for="username">Аты</label>
-                    <input type="text" id="username" name="username" value="{{ form.get('username', '') }}"
-                           minlength="2" maxlength="50" autocomplete="name" required autofocus>
-                </div>
-
-                <div class="field field-wide">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" value="{{ form.get('email', '') }}"
-                           maxlength="254" autocomplete="email" required>
-                </div>
-
-                <div class="field">
-                    <label for="password">Құпиясөз</label>
-                    <input type="password" id="password" name="password" minlength="8" maxlength="128"
-                           autocomplete="new-password" required>
-                </div>
-
-                <div class="field">
-                    <label for="password_confirm">Қайталаңыз</label>
-                    <input type="password" id="password_confirm" name="password_confirm" minlength="8"
-                           maxlength="128" autocomplete="new-password" required>
-                </div>
-
-                <button class="btn field-wide" type="submit">Тіркелу</button>
-            </form>
-
-            <p class="auth-switch">Аккаунтың бар ма? <a href="{{ url_for('login') }}">Кіру</a></p>
-        </div>
+        <section class="auth-features" aria-labelledby="auth-features-title">
+            <p class="auth-features-title" id="auth-features-title">Бір аккаунтта:</p>
+            <ul>
+                <li>{{ icon('check', 17) }}<span>Кіріс пен шығысты санат бойынша тіркеу</span></li>
+                <li>{{ icon('check', 17) }}<span>Банк карталарының балансын бақылау</span></li>
+                <li>{{ icon('check', 17) }}<span>Әр пайдаланушы тек өз деректерін көреді</span></li>
+            </ul>
+            <p class="auth-features-note">
+                {{ icon('shield-check', 17) }}
+                <span>Құпиясөздер хэштелген түрде сақталады.</span>
+            </p>
+        </section>
     </section>
-</main>
+
+    <section class="auth-card auth-card-register" aria-labelledby="register-title">
+        <p class="eyebrow">Жаңа тіркелгі</p>
+        <h1 id="register-title">Алғашқы қадамды жасаңыз</h1>
+        <p class="auth-sub">Тегін тіркеліп, қаржыңызға айқындық қосыңыз.</p>
+
+        <form class="auth-form" method="POST" action="{{ url_for('register') }}" data-register-form>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="field">
+                <label for="username">Аты-жөні</label>
+                <div class="input-wrap">
+                    <input type="text" id="username" name="username" value="{{ form.get('username', '') }}"
+                           placeholder="Айдана Серікқызы" minlength="2" maxlength="50"
+                           autocomplete="name" required autofocus>
+                    <span class="input-icon">{{ icon('info', 18) }}</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="email">Электрондық пошта</label>
+                <div class="input-wrap">
+                    <input type="email" id="email" name="email" value="{{ form.get('email', '') }}"
+                           placeholder="aidana@pochta.kz" maxlength="254" autocomplete="email" required>
+                    <span class="input-icon">{{ icon('mail', 18) }}</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="password">Құпиясөз</label>
+                <div class="input-wrap">
+                    <input type="password" id="password" name="password" minlength="8" maxlength="128"
+                           placeholder="Кемінде 8 таңба" autocomplete="new-password" required>
+                    <button class="input-icon input-icon-btn" type="button" data-password-toggle
+                            data-target="password" aria-label="Құпиясөзді көрсету" aria-pressed="false">
+                        <span data-eye-show>{{ icon('eye', 18) }}</span>
+                        <span data-eye-hide class="is-hidden">{{ icon('eye-off', 18) }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="strength" data-password-strength aria-live="polite">
+                <div class="strength-bars" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <p class="strength-text" data-strength-text>Кемінде 8 таңба</p>
+            </div>
+
+            <div class="field">
+                <label for="password_confirm">Құпиясөзді қайталау</label>
+                <div class="input-wrap">
+                    <input type="password" id="password_confirm" name="password_confirm" minlength="8"
+                           maxlength="128" placeholder="Құпиясөзді қайталаңыз"
+                           autocomplete="new-password" required>
+                    <button class="input-icon input-icon-btn" type="button" data-password-toggle
+                            data-target="password_confirm" aria-label="Құпиясөзді көрсету" aria-pressed="false">
+                        <span data-eye-show>{{ icon('eye', 18) }}</span>
+                        <span data-eye-hide class="is-hidden">{{ icon('eye-off', 18) }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" type="submit">
+                <span>Тіркелуді аяқтау</span>{{ icon('arrow-right', 17) }}
+            </button>
+        </form>
+
+        <p class="auth-switch">Тіркелгіңіз бар ма? <a href="{{ url_for('login') }}">Кіру</a></p>
+    </section>
+</div>
 {% endblock %}

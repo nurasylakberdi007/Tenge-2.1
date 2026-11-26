@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Хабарландырулар{% endblock %}
+{% block page_title %}Хабарландырулар{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <p class="page-sub">
+        Жүйелік хабарлар, бюджет ескертулері және қауіпсіздік туралы ақпарат бір жерде.
+        {% if unread_count %}<span class="pill pill-orange">{{ unread_count }} оқылмаған</span>{% endif %}
+    </p>
+    <form action="{{ url_for('mark_all_notifications') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost" type="submit">
+            {{ icon('check', 17) }} Барлығын оқылды деп белгілеу
+        </button>
+    </form>
+</div>
+
+<nav class="filter-row" aria-label="Хабарландыру сүзгісі">
+    <a class="settings-tab{% if filter == 'all' %} is-active{% endif %}"
+       href="{{ url_for('notifications', filter='all', q=q) }}"
+       {% if filter == 'all' %}aria-current="true"{% endif %}>
+        Барлығы <span class="pill">{{ counts.all }}</span>
+    </a>
+    <a class="settings-tab{% if filter == 'unread' %} is-active{% endif %}"
+       href="{{ url_for('notifications', filter='unread', q=q) }}"
+       {% if filter == 'unread' %}aria-current="true"{% endif %}>
+        Оқылмаған <span class="pill pill-orange">{{ counts.unread }}</span>
+    </a>
+    <a class="settings-tab{% if filter == 'budget' %} is-active{% endif %}"
+       href="{{ url_for('notifications', filter='budget', q=q) }}"
+       {% if filter == 'budget' %}aria-current="true"{% endif %}>
+        Бюджеттер <span class="pill">{{ counts.budget }}</span>
+    </a>
+    <a class="settings-tab{% if filter == 'security' %} is-active{% endif %}"
+       href="{{ url_for('notifications', filter='security', q=q) }}"
+       {% if filter == 'security' %}aria-current="true"{% endif %}>
+        Қауіпсіздік <span class="pill">{{ counts.security }}</span>
+    </a>
+</nav>
+
+<form class="search-box" method="GET" action="{{ url_for('notifications') }}" role="search">
+    {% if filter != 'all' %}<input type="hidden" name="filter" value="{{ filter }}">{% endif %}
+    <input type="search" name="q" value="{{ q }}" placeholder="Хабарландыруларды іздеу"
+           aria-label="Хабарландыруларды іздеу" autocomplete="off">
+    <button class="btn btn-primary btn-sm" type="submit">{{ icon('arrow-right', 15) }} Іздеу</button>
+</form>
+
+<div class="notify-layout">
+    <div class="notify-main">
+        {% if notifications %}
+            <ul class="notify-list panel">
+                {% for n in notifications %}
+                    <li class="notify-item{% if not n.is_read %} is-unread{% endif %}">
+                        <span class="notify-icon">{{ icon(n.icon, 20) }}</span>
+
+                        <div class="notify-body">
+                            <strong>{{ n.title }}</strong>
+                            <p>{{ n.body }}</p>
+                            {% if n.kind == 'budget' %}
+                                <span class="pill pill-orange">{{ icon('wallet', 12) }} Бюджет</span>
+                            {% elif n.kind == 'security' %}
+                                <span class="pill pill-green">{{ icon('shield-check', 12) }} Қауіпсіздік</span>
+                            {% endif %}
+                            {% if n.url %}
+                                <a href="{{ n.url }}" class="notify-link">
+                                    Толығырақ {{ icon('arrow-right', 14) }}
+                                </a>
+                            {% endif %}
+                        </div>
+
+                        <div class="notify-meta">
+                            <span class="notify-time">{{ n.time_label }}</span>
+                            {% if not n.is_read %}
+                                <form action="{{ url_for('read_notification', notification_id=n.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="btn btn-ghost btn-sm" type="submit"
+                                            aria-label="Оқылды деп белгілеу" title="Оқылды деп белгілеу">
+                                        {{ icon('check', 16) }}
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <section class="panel empty-state">
+                {{ icon('mail', 34) }}
+                <h2>Хабарландыру жоқ</h2>
+                <p>Сүзгіні өзгертіп көріңіз немесе іздеу сөзін басқаша енгізіңіз.</p>
+                <a class="btn btn-ghost" href="{{ url_for('notifications', filter='all', q='') }}">
+                    {{ icon('arrow-left', 16) }} Барлығын көру
+                </a>
+            </section>
+        {% endif %}
+    </div>
+
+    <aside class="notify-side">
+        <section class="panel" aria-labelledby="notify-prefs-title">
+            <div class="panel-head">
+                <h2 id="notify-prefs-title">Хабарландыру баптаулары</h2>
+                {{ icon('settings-2', 18) }}
+            </div>
+            <p class="panel-sub">Қандай оқиғалар туралы хабар алғыңыз келетінін таңдаңыз.</p>
+
+            <form action="{{ url_for('notification_preferences') }}" method="POST" class="settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="switch-row">
+                    <div class="setting-row-copy">
+                        <strong>Сайттағы хабарлар</strong>
+                        <p>Жүйелік хабарландыруларды осы жерде көрсету.</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="notify_site"{% if prefs.notify_site %} checked{% endif %}>
+                        <span class="toggle-track" aria-hidden="true"></span>
+                        <span class="visually-hidden">Сайттағы хабарлар</span>
+                    </label>
+                </div>
+
+                <div class="switch-row">
+                    <div class="setting-row-copy">
+                        <strong>Электрондық пошта</strong>
+                        <p>Маңызды оқиғаларды email арқылы жіберу.</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="notify_email"{% if prefs.notify_email %} checked{% endif %}>
+                        <span class="toggle-track" aria-hidden="true"></span>
+                        <span class="visually-hidden">Электрондық пошта</span>
+                    </label>
+                </div>
+
+                <div class="switch-row">
+                    <div class="setting-row-copy">
+                        <strong>Бюджет ескертулері</strong>
+                        <p>Лимиттің {{ icon('alert-circle', 12) }} шегіне жеткенде ескерту.</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="notify_budget"{% if prefs.notify_budget %} checked{% endif %}>
+                        <span class="toggle-track" aria-hidden="true"></span>
+                        <span class="visually-hidden">Бюджет ескертулері</span>
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">
+                        {{ icon('check', 17) }} Баптауларды сақтау
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel secure-panel" aria-labelledby="notify-security-title">
+            {{ icon('shield-check', 24) }}
+            <div>
+                <h3 id="notify-security-title">Қауіпсіздік туралы</h3>
+                <p>Кіру, құпиясөз және тіркелгі өзгерістері туралы хабарлар әрқашан сақталады. Бұл сіздің тіркелгіңізді қорғауға көмектеседі.</p>
+            </div>
+        </section>
+
+        <section class="panel" aria-labelledby="notify-retention-title">
+            <div class="panel-head">
+                <h2 id="notify-retention-title">Хабарларды сақтау</h2>
+                {{ icon('clock', 18) }}
+            </div>
+            <p class="panel-sub">Оқылған хабарландырулар 90 күн сақталады, содан кейін автоматты түрде өшіріледі. Маңызды ескертулердің көшірмесі email-ге жіберілуі мүмкін.</p>
+        </section>
+    </aside>
+</div>
+{% endblock %}

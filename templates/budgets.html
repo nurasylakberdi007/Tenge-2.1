@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Бюджеттер{% endblock %}
+{% block page_title %}Бюджеттер{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <div class="month-nav">
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('budgets', month=prev_month, status=status) }}"
+           aria-label="Алдыңғы ай">{{ icon('arrow-left', 16) }}</a>
+        <span class="pill pill-cyan">{{ icon('calendar-days', 14) }} {{ month_label }}</span>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('budgets', month=next_month, status=status) }}"
+           aria-label="Келесі ай">{{ icon('arrow-right', 16) }}</a>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('new_budget', month=month) }}">
+        {{ icon('plus', 17) }} Бюджет құру
+    </a>
+</div>
+
+<nav class="status-tabs" aria-label="Бюджеттер күйі">
+    <a class="status-tab{% if status == 'active' %} is-active{% endif %}"
+       href="{{ url_for('budgets', month=month, status='active') }}"
+       {% if status == 'active' %}aria-current="true"{% endif %}>
+        {{ icon('wallet', 15) }} Белсенді <span class="pill">{{ counts.active }}</span>
+    </a>
+    <a class="status-tab{% if status == 'completed' %} is-active{% endif %}"
+       href="{{ url_for('budgets', month=month, status='completed') }}"
+       {% if status == 'completed' %}aria-current="true"{% endif %}>
+        {{ icon('check', 15) }} Орындалған <span class="pill">{{ counts.completed }}</span>
+    </a>
+</nav>
+
+{% if alert %}
+<div class="alert-box" role="status">
+    {{ icon('alert-triangle', 20) }}
+    <div>
+        <strong>{{ alert.title }}</strong>
+        <p>{{ alert.text }}</p>
+    </div>
+</div>
+{% endif %}
+
+<section class="stats-grid" aria-label="Бюджет қорытындысы">
+    <article class="stat-card">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-cyan">{{ icon('wallet', 20) }}</span>
+            <h2>Жоспарланған</h2>
+        </div>
+        <p class="stat-value">{{ totals.planned | money }} <span class="unit">₸</span></p>
+        <p class="stat-note is-cyan">
+            {{ icon('info', 13) }} <span>{{ totals.count }} бюджет есепке алынды</span>
+        </p>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-orange">{{ icon('arrow-up-right', 20) }}</span>
+            <h2>Жұмсалған</h2>
+        </div>
+        <p class="stat-value">{{ totals.spent | money }} <span class="unit">₸</span></p>
+        <p class="stat-note is-orange">
+            {{ icon('info', 13) }} <span>{{ totals.percent }}% лимит пайдаланылды</span>
+        </p>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-green">{{ icon('piggy-bank', 20) }}</span>
+            <h2>Қалған сома</h2>
+        </div>
+        <p class="stat-value">{{ totals.remaining | money }} <span class="unit">₸</span></p>
+        <p class="stat-note{% if totals.remaining > 0 %} is-green{% endif %}">
+            {{ icon('info', 13) }} <span>{{ month_label }} айының қорытындысы</span>
+        </p>
+    </article>
+</section>
+
+{% if budgets %}
+<div class="budget-grid">
+    {% for b in budgets %}
+        {% set pct = b.percent | round | int %}
+        {% set fill = 'fill-pink' if pct >= 100 else ('fill-orange' if pct >= 80 else 'fill-blue') %}
+        <article class="budget-card panel">
+            <div class="budget-card-head">
+                <span class="budget-avatar" style="background: {{ b.color or '#3a6ff8' }};">
+                    {{ icon(b.icon, 20) }}
+                </span>
+                <div class="budget-card-copy">
+                    <h2>{{ b.name }}</h2>
+                    <p>{{ b.category_name }}</p>
+                </div>
+                {% if b.status == 'completed' %}
+                    <span class="pill pill-green">{{ icon('check', 13) }} Орындалды</span>
+                {% else %}
+                    <span class="pill pill-cyan">Белсенді</span>
+                {% endif %}
+            </div>
+
+            <p class="budget-amount">
+                {{ b.spent | money }} ₸ <span class="budget-limit">/ {{ b.amount | money }} ₸</span>
+            </p>
+
+            <div class="progress" role="img" aria-label="Бюджеттің {{ pct }} пайызы жұмсалды">
+                <span class="{{ fill }}" style="width: {{ [pct, 100] | min }}%"></span>
+            </div>
+
+            <div class="budget-card-meta">
+                <span>{{ pct }}% жұмсалды</span>
+                <span{% if b.remaining < 0 %} class="text-pink"{% endif %}>
+                    {{ b.remaining | money }} ₸ қалды
+                </span>
+            </div>
+
+            <p class="hint">
+                {{ icon('calendar-days', 13) }}
+                <span>{{ b.start_date | date_kz }} — {{ b.end_date | date_kz }}</span>
+            </p>
+
+            <div class="budget-card-tags">
+                {% if b.repeat_monthly %}
+                    <span class="pill">{{ icon('calendar-days', 12) }} Ай сайын</span>
+                {% endif %}
+                {% if b.alert_percent %}
+                    <span class="pill pill-orange">{{ icon('alert-circle', 12) }} {{ b.alert_percent }}%</span>
+                {% endif %}
+                {% if b.notified %}
+                    <span class="pill pill-pink">Ескертілді</span>
+                {% endif %}
+            </div>
+
+            <div class="budget-card-actions">
+                <a class="btn btn-ghost btn-sm" href="{{ url_for('edit_budget', budget_id=b.id) }}">
+                    {{ icon('settings-2', 15) }} Өңдеу
+                </a>
+                <form action="{{ url_for('delete_budget', budget_id=b.id) }}" method="POST"
+                      data-confirm="«{{ b.name }}» бюджетін жою керек пе?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-danger btn-sm" type="submit" aria-label="Бюджетті жою">
+                        {{ icon('trash-2', 15) }}
+                    </button>
+                </form>
+            </div>
+        </article>
+    {% endfor %}
+</div>
+{% else %}
+<section class="panel empty-state">
+    {{ icon('piggy-bank', 34) }}
+    <h2>Бұл айда бюджет жоқ</h2>
+    <p>Шығыстарыңызды бақылау үшін алғашқы бюджетті құрыңыз.</p>
+    <a class="btn btn-primary" href="{{ url_for('new_budget', month=month) }}">
+        {{ icon('plus', 17) }} Бюджет құру
+    </a>
+</section>
+{% endif %}
+{% endblock %}

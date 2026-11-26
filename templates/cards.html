@@ -1,61 +1,234 @@
 {% extends "base.html" %}
-{% from "_macros.html" import transaction_row with context %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import pay_card, tx_table with context %}
 
 {% block title %}Карталар{% endblock %}
+{% block page_title %}Менің карталарым{% endblock %}
 
 {% block content %}
-<main class="container">
-    <div class="page-head">
-        <h1>Банк карталары</h1>
-        <p class="muted">
-            {% if cards %}Карталардағы жалпы сома: <strong>{{ total_balance | money }} ₸</strong>{% else %}Әзірге карта жоқ{% endif %}
-        </p>
+<div class="page-actions" id="cards-top">
+    <p class="page-sub">
+        {% if cards %}
+            Екі-үш картаңыздың балансын бір жерден бақылаңыз. Жалпы сома: <strong>{{ total_balance | money }} ₸</strong>
+        {% else %}
+            Банк карталарыңызды қосып, қаражатты бір жерден бақылаңыз.
+        {% endif %}
+    </p>
+    <a class="btn btn-primary" href="#add-card">{{ icon('plus', 17) }} Карта қосу</a>
+</div>
+
+<section class="balance-row" aria-label="Карталар балансы">
+    <div class="balance-total">
+        <span>Карталардағы қаражат</span>
+        <strong>{{ total_balance | money }} ₸</strong>
+    </div>
+    <span class="pill {% if cards %}pill-green{% endif %}">{{ cards|length }} белсенді карта</span>
+</section>
+
+{% if cards|length > 1 %}
+<section class="panel" id="card-transfer" aria-labelledby="transfer-title">
+    <div class="panel-head">
+        <h2 id="transfer-title">Карталар арасында аудару</h2>
+        <span class="pill">Ішкі аудару</span>
+    </div>
+    <form class="form-grid" action="{{ url_for('transfer') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="transfer_key" value="{{ transfer_key }}">
+
+        <div class="field">
+            <label for="transfer-source">Қай картадан</label>
+            <select id="transfer-source" name="source_card_id" required>
+                {% for c in cards %}
+                    <option value="{{ c['id'] }}"{% if selected and selected['id'] == c['id'] %} selected{% endif %}>
+                        {{ c['name'] }} •••• {{ c['last_four'] }} — {{ c['balance'] | money }} ₸
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="transfer-destination">Қай картаға</label>
+            {% set ns = namespace(destination_set=false) %}
+            <select id="transfer-destination" name="destination_card_id" required>
+                {% for c in cards %}
+                    <option value="{{ c['id'] }}"{% if not ns.destination_set and selected and selected['id'] != c['id'] %} selected{% set ns.destination_set = true %}{% endif %}>
+                        {{ c['name'] }} •••• {{ c['last_four'] }} — {{ c['balance'] | money }} ₸
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="transfer-amount">Сома, ₸</label>
+            <input type="text" id="transfer-amount" name="amount" inputmode="decimal"
+                   placeholder="2500" autocomplete="off" required>
+        </div>
+
+        <button class="btn btn-primary field-wide" type="submit">
+            {{ icon('arrow-right', 17) }} Аудару
+        </button>
+    </form>
+</section>
+{% endif %}
+
+<div class="cards-layout">
+    <div class="cards-main">
+        {% if cards %}
+            <div class="cards-grid">
+                {% for c in cards %}
+                    {% set is_current = selected and selected['id'] == c['id'] %}
+                    {% set pct = ((c['expense'] * 100 / c['income']) | round | int) if c['income'] > 0 else (100 if c['expense'] > 0 else 0) %}
+                    <article class="card-tile">
+                        {{ pay_card(c, g.user.username, url_for('cards', card=c['id']), is_current) }}
+
+                        <div class="panel card-info">
+                            <div class="card-info-row">
+                                <span>Кіріс</span>
+                                <strong class="text-green">+{{ c['income'] | money }} ₸</strong>
+                            </div>
+                            <div class="progress">
+                                <span class="fill-{{ 'cyan' if c['id'] % 2 else 'blue' }}"
+                                      style="width: {{ [pct, 100] | min }}%"></span>
+                            </div>
+                            <p class="card-info-note">
+                                {{ c['expense'] | money }} ₸ жұмсалды · {{ c['balance'] | money }} ₸ қалды
+                            </p>
+                            <div class="card-info-actions">
+                                <a class="btn btn-primary btn-sm" href="{{ url_for('cards', card=c['id']) }}">
+                                    Толығырақ {{ icon('arrow-right', 15) }}
+                                </a>
+                                {% if is_current %}<span class="pill pill-cyan">Таңдалған</span>{% endif %}
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <section class="panel empty-state">
+                {{ icon('credit-card', 34) }}
+                <h2>Әзірге карта жоқ</h2>
+                <p>Төмендегі формадан бірінші картаңызды қосыңыз. Толық нөмір қажет емес.</p>
+                <a class="btn btn-primary" href="#add-card">{{ icon('plus', 17) }} Карта қосу</a>
+            </section>
+        {% endif %}
     </div>
 
-    <div class="cards-layout">
-        <section aria-label="Карталар тізімі">
-            {% if cards %}
-                <div class="card-grid">
-                    {% for c in cards %}
-                        <a class="bank-card theme-{{ c['id'] % 5 }}{% if selected and selected['id'] == c['id'] %} is-selected{% endif %}"
-                           href="{{ url_for('cards', card=c['id']) }}"
-                           {% if selected and selected['id'] == c['id'] %}aria-current="true"{% endif %}>
-                            <span class="bank-card-top">
-                                <span class="bank-card-bank">{{ c['bank_name'] }}</span>
-                                <span class="bank-card-name">{{ c['name'] }}</span>
-                            </span>
-                            <span class="bank-card-number">**** {{ c['last_four'] }}</span>
-                            <span class="bank-card-balance">{{ c['balance'] | money }} ₸</span>
-                        </a>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="panel empty">
-                    <p>Картаңызды қосыңыз.</p>
-                    <p>Оң жақтағы формаға атауын, банкті және соңғы 4 цифрын енгізіңіз.</p>
-                </div>
-            {% endif %}
-        </section>
+    <aside class="panel cards-side" aria-labelledby="cards-side-title">
+        <span class="big-icon">{{ icon('credit-card', 40) }}</span>
+        <h2 id="cards-side-title">Барлық карта — бір жерде</h2>
+        <p>Басқа картаңызды қосып, жеке қаржыңыздың толық көрінісін алыңыз.</p>
+        <a class="btn btn-primary" href="#add-card">{{ icon('plus', 17) }} Жаңа карта қосу</a>
+        <p class="side-note">
+            {{ icon('shield-check', 15) }}
+            <span>Карта деректері тек есеп жүргізу үшін сақталады. Аудару тек осы карталар арасында есептеледі.</span>
+        </p>
+    </aside>
+</div>
 
-        <section class="panel">
-            <h2>Жаңа карта қосу</h2>
+{% if selected %}
+<section class="card-detail" id="selected-card" aria-labelledby="selected-card-title">
+    <div class="section-head">
+        <div>
+            <h2 id="selected-card-title">{{ selected['name'] }}</h2>
+            <p class="section-sub">{{ selected['bank_name'] }} · •••• {{ selected['last_four'] }}</p>
+        </div>
+        <span class="pill pill-cyan">{{ selected['balance'] | money }} ₸</span>
+    </div>
+
+    <div class="detail-grid">
+        <div class="detail-left">
+            {{ pay_card(selected, g.user.username, url_for('cards', card=selected['id']), true) }}
+
+            <section class="panel about-card" aria-labelledby="about-card-title">
+                <div class="panel-head">
+                    <h2 id="about-card-title">Карта туралы</h2>
+                    {{ icon('info', 16) }}
+                </div>
+
+                <dl class="info-list">
+                    <div><dt>Банк</dt><dd>{{ selected['bank_name'] }}</dd></div>
+                    <div><dt>Соңғы 4 цифр</dt><dd>•••• {{ selected['last_four'] }}</dd></div>
+                    <div><dt>Қосылған күні</dt><dd>{{ selected['created_at'] | date_kz }}</dd></div>
+                    <div><dt>Баланс</dt><dd>{{ selected['balance'] | money }} ₸</dd></div>
+                    <div><dt>Депозит (кіріс)</dt><dd class="text-green">+{{ card_deposit | money }} ₸</dd></div>
+                    <div><dt>Шығыс</dt><dd class="text-orange">−{{ card_expense | money }} ₸</dd></div>
+                </dl>
+
+                <form action="{{ url_for('delete_card', card_id=selected['id']) }}" method="POST"
+                      data-confirm="Картаны жою керек пе? Оның операциялары жалпы тарихта қалады.">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-danger btn-block" type="submit">
+                        {{ icon('trash-2', 16) }} Картаны жою
+                    </button>
+                </form>
+            </section>
+        </div>
+
+        <div class="detail-right">
+            <section class="panel" aria-labelledby="card-tx-form-title">
+                <div class="panel-head">
+                    <h2 id="card-tx-form-title">Операция қосу</h2>
+                    <span class="pill">Осы картаға</span>
+                </div>
+
+                {% set form_id = "card" %}
+                {% set next_page = "cards" %}
+                {% set form_card_id = selected['id'] %}
+                {% set form_cards = none %}
+                {% include "_transaction_form.html" %}
+            </section>
+
+            <section class="panel" aria-labelledby="card-tx-title">
+                <div class="panel-head">
+                    <h2 id="card-tx-title">Карта операциялары</h2>
+                    <span class="pill pill-cyan">{{ transactions|length }} операция</span>
+                </div>
+
+                {% if transactions %}
+                    {{ tx_table(transactions, "cards", false, true) }}
+                {% else %}
+                    <div class="empty-state">
+                        {{ icon('arrow-left-right', 30) }}
+                        <p>Бұл картада операция жоқ.</p>
+                        <p>Баланс бастапқы сомаға тең: {{ selected['balance'] | money }} ₸.</p>
+                    </div>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="add-card-section" id="add-card" aria-labelledby="add-card-title">
+    <div class="section-head">
+        <div>
+            <h2 id="add-card-title">Жаңа карта қосу</h2>
+            <p class="section-sub">Толық нөмір, CVV және PIN сұралмайды — тек соңғы 4 цифр.</p>
+        </div>
+    </div>
+
+    <div class="add-card-grid">
+        <section class="panel add-card-panel">
             <form class="form-grid" action="{{ url_for('add_card') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <div class="field field-wide">
                     <label for="card-name">Карта атауы</label>
-                    <input type="text" id="card-name" name="name" maxlength="50" placeholder="Kaspi Gold" required>
+                    <input type="text" id="card-name" name="name" maxlength="50"
+                           placeholder="Күнделікті карта" autocomplete="off" required>
                 </div>
 
                 <div class="field field-wide">
                     <label for="card-bank">Банк атауы</label>
-                    <input type="text" id="card-bank" name="bank_name" maxlength="50" placeholder="Kaspi Bank" required>
+                    <input type="text" id="card-bank" name="bank_name" maxlength="50"
+                           placeholder="Kaspi Bank" autocomplete="off" required>
                 </div>
 
                 <div class="field">
                     <label for="card-last-four">Соңғы 4 цифр</label>
                     <input type="text" id="card-last-four" name="last_four" inputmode="numeric"
-                           pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="4582" autocomplete="off" required>
+                           pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="4512"
+                           autocomplete="off" required>
                 </div>
 
                 <div class="field">
@@ -64,60 +237,45 @@
                            value="0" autocomplete="off" required>
                 </div>
 
-                <button class="btn field-wide" type="submit">Картаны қосу</button>
+                <div class="form-actions field-wide">
+                    <button class="btn btn-primary" type="submit">{{ icon('plus', 17) }} Картаны қосу</button>
+                    <a class="btn btn-ghost" href="{{ url_for('cards') }}">Болдырмау</a>
+                </div>
             </form>
-            <p class="hint">Қауіпсіздік үшін толық нөмір, CVV және PIN сұралмайды.</p>
+            <p class="hint">{{ icon('info', 13) }} Бастапқы баланс — картада қазір бар сома. Кейінгі операциялар оны автоматты өзгертеді.</p>
         </section>
+
+        <div class="preview-stack">
+            <section class="panel preview-panel" aria-labelledby="preview-title">
+                <div class="panel-head">
+                    <h2 id="preview-title">Алдын ала көрініс</h2>
+                    <span class="pill pill-cyan">Жанды</span>
+                </div>
+
+                <div class="pay-card pay-card-preview" data-card-preview>
+                    <span class="pay-card-top">
+                        <span class="pay-card-name" data-preview-name>Карта атауы</span>
+                        <span class="card-chip" aria-hidden="true"></span>
+                    </span>
+                    <span class="pay-card-balance" data-preview-balance>0 <span class="unit">₸</span></span>
+                    <span class="pay-card-number" data-preview-number>•••• •••• •••• ••••</span>
+                    <span class="pay-card-bottom">
+                        <span class="pay-card-holder" data-preview-holder>{{ g.user.username | upper }}</span>
+                        <span class="pay-card-bank" data-preview-bank>Банк атауы</span>
+                    </span>
+                </div>
+
+                <p class="hint">Өрістерді толтырғанда картаның көрінісі осы жерде жаңарады.</p>
+            </section>
+
+            <section class="panel secure-panel" aria-labelledby="secure-title">
+                {{ icon('shield-check', 26) }}
+                <div>
+                    <h3 id="secure-title">Деректеріңіз қорғалған</h3>
+                    <p>Толық нөмір, CVV және PIN сақталмайды. Тек соңғы 4 цифр есеп жүргізу үшін жеткілікті.</p>
+                </div>
+            </section>
+        </div>
     </div>
-
-    {% if selected %}
-    <section class="panel card-detail" aria-labelledby="card-detail-title">
-        <div class="card-detail-head">
-            <div>
-                <h2 id="card-detail-title">{{ selected['name'] }} <span class="muted">**** {{ selected['last_four'] }}</span></h2>
-                <p class="muted">{{ selected['bank_name'] }}</p>
-            </div>
-
-            <dl class="mini-stats">
-                <div><dt>Баланс</dt><dd>{{ selected['balance'] | money }} ₸</dd></div>
-                <div class="income"><dt>Кіріс</dt><dd>+{{ card_income | money }} ₸</dd></div>
-                <div class="expense"><dt>Шығыс</dt><dd>−{{ card_expense | money }} ₸</dd></div>
-            </dl>
-
-            <form action="{{ url_for('delete_card', card_id=selected['id']) }}" method="POST"
-                  data-confirm="Картаны жою керек пе? Оның операциялары жалпы тарихта қалады.">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button class="btn btn-ghost btn-small btn-danger" type="submit">Картаны жою</button>
-            </form>
-        </div>
-
-        <div class="dashboard-grid card-detail-body">
-            <div>
-                <h3>Картаға операция қосу</h3>
-                {% set form_id = "card" %}
-                {% set next_page = "cards" %}
-                {% set form_card_id = selected['id'] %}
-                {% set form_cards = none %}
-                {% include "_transaction_form.html" %}
-            </div>
-
-            <div>
-                <h3>Карта операциялары</h3>
-                {% if transactions %}
-                    <ul class="tx-list">
-                        {% for t in transactions %}
-                            {{ transaction_row(t, "cards", false) }}
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <div class="empty">
-                        <p>Бұл картада операция жоқ.</p>
-                        <p>Баланс бастапқы сомаға тең: {{ selected['balance'] | money }} ₸.</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </section>
-    {% endif %}
-</main>
+</section>
 {% endblock %}

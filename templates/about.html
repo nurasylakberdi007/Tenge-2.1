@@ -1,32 +1,73 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}Жоба туралы{% endblock %}
+{% block page_title %}Жоба туралы{% endblock %}
 
 {% block content %}
-<main class="container container-narrow">
-    <div class="page-head">
-        <h1>Tenge — жеке қаржыға арналған қарапайым құрал</h1>
-        <p class="muted">Кіріс, шығыс және банк карталарын бір жерде жүргізіңіз.</p>
-    </div>
-
-    <section class="panel prose">
-        <h2>Не істей аласыз</h2>
-        <p>Кіріс пен шығысты санат бойынша жазып, жалпы балансты бақылайсыз. Банк карталарын қосып, әр картаның балансы мен операциялар тарихын жеке көресіз.</p>
-
-        <h2>Баланс қалай есептеледі</h2>
-        <p>Жалпы баланс = жалпы кіріс − жалпы шығыс. Картаның балансы = бастапқы баланс + картаға жазылған кіріс − картаға жазылған шығыс. Сомалар тиынға дейін дәл сақталады.</p>
-
-        <h2>Қауіпсіздік</h2>
-        <p>Картаның толық нөмірі, CVV және PIN сақталмайды, тек соңғы 4 цифр ғана қажет. Құпиясөздер хэштелген түрде сақталады, ал әр пайдаланушы тек өз деректерін көреді.</p>
-
-        <p class="prose-actions">
+<div class="about-page">
+    <section class="panel about-hero">
+        <span class="pill pill-cyan">Tenge жобасы</span>
+        <h1>Жеке қаржыға арналған қарапайым құрал</h1>
+        <p>Кіріс, шығыс және банк карталарын бір жерде жүргізіңіз. Артық функциясыз — тек қажет нәрсенің бәрі.</p>
+        <div class="hero-actions">
             {% if g.user %}
-                <a class="btn" href="{{ url_for('index') }}">Басты бетке өту</a>
+                <a class="btn btn-primary" href="{{ url_for('index') }}">Басты бетке өту {{ icon('arrow-right', 17) }}</a>
+                <a class="btn btn-ghost" href="{{ url_for('cards') }}">Карталар</a>
             {% else %}
-                <a class="btn" href="{{ url_for('register') }}">Тіркелу</a>
+                <a class="btn btn-primary" href="{{ url_for('register') }}">Тіркелу {{ icon('arrow-right', 17) }}</a>
                 <a class="btn btn-ghost" href="{{ url_for('login') }}">Кіру</a>
             {% endif %}
-        </p>
+        </div>
     </section>
-</main>
+
+    <div class="feature-grid">
+        <article class="panel feature-card">
+            <span class="feature-icon">{{ icon('arrow-left-right', 22) }}</span>
+            <h2>Операциялар</h2>
+            <p>Кіріс пен шығысты санат бойынша жазып, жалпы балансты бақылайсыз.</p>
+        </article>
+        <article class="panel feature-card">
+            <span class="feature-icon">{{ icon('credit-card', 22) }}</span>
+            <h2>Карталар</h2>
+            <p>Банк карталарын қосып, әр картаның балансы мен операциялар тарихын жеке көресіз.</p>
+        </article>
+        <article class="panel feature-card">
+            <span class="feature-icon">{{ icon('shield-check', 22) }}</span>
+            <h2>Қауіпсіздік</h2>
+            <p>Құпиясөздер хэштелген түрде сақталады, ал әр пайдаланушы тек өз деректерін көреді.</p>
+        </article>
+    </div>
+
+    <div class="about-grid">
+        <section class="panel prose" aria-labelledby="balance-rule-title">
+            <h2 id="balance-rule-title">Баланс қалай есептеледі</h2>
+            <p>Сомалар тиынға дейін дәл сақталады. Есеп ашық әрі қарапайым:</p>
+            <dl class="formula">
+                <div>
+                    <dt>Жалпы баланс</dt>
+                    <dd>карталардың бастапқы қалдығы + кіріс − шығыс</dd>
+                </div>
+                <div>
+                    <dt>Карта балансы</dt>
+                    <dd>бастапқы баланс + картаға жазылған кіріс − шығыс</dd>
+                </div>
+                <div>
+                    <dt>Жұмсалған үлес</dt>
+                    <dd>шығыс ÷ кіріс × 100%</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="panel prose" aria-labelledby="security-title">
+            <h2 id="security-title">Қауіпсіздік</h2>
+            <ul class="check-list">
+                <li>{{ icon('check', 16) }}<span>Картаның толық нөмірі, CVV және PIN сақталмайды — тек соңғы 4 цифр қажет.</span></li>
+                <li>{{ icon('check', 16) }}<span>Құпиясөздер хэштелген түрде сақталады.</span></li>
+                <li>{{ icon('check', 16) }}<span>Әр пайдаланушы тек өз операциялары мен карталарын көреді.</span></li>
+                <li>{{ icon('check', 16) }}<span>Барлық формалар CSRF қорғанысымен жіберіледі.</span></li>
+            </ul>
+        </section>
+    </div>
+</div>
 {% endblock %}

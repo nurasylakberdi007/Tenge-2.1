@@ -9,7 +9,6 @@
     min-height: 100vh;
 }
 
-/* Сол жақ: қара брендтік панель */
 
 .auth-brand {
     display: flex;
@@ -46,7 +45,7 @@
     color: rgba(255, 255, 255, 0.5);
 }
 
-/* Оң жақ: форма */
+
 
 .auth-panel {
     display: flex;

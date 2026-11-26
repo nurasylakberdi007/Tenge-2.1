@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import tx_table with context %}
+
+{% block title %}Операциялар{% endblock %}
+{% block page_title %}Операциялар{% endblock %}
+
+{% block content %}
+<section class="transactions-section" id="transactions" aria-labelledby="transactions-title">
+    <div class="section-head">
+        <div>
+            <h2 id="transactions-title">Операциялар</h2>
+            <p class="section-sub">Кіріс пен шығысты қосыңыз — баланс бірден жаңарады.</p>
+        </div>
+        <a class="btn btn-primary" href="#add-transaction">{{ icon('plus', 17) }} Операция қосу</a>
+    </div>
+
+    <div class="tx-layout">
+        <section class="panel" id="add-transaction" aria-labelledby="add-transaction-title">
+            <div class="panel-head">
+                <h2 id="add-transaction-title">Операция қосу</h2>
+                <span class="pill">Жаңа жазба</span>
+            </div>
+
+            {% set form_id = "main" %}
+            {% set next_page = "transactions" %}
+            {% set form_card_id = None %}
+            {% set form_cards = cards %}
+            {% include "_transaction_form.html" %}
+        </section>
+
+        <section class="panel tx-history" aria-labelledby="history-title">
+            <div class="panel-head">
+                <h2 id="history-title">Операциялар тарихы</h2>
+                <span class="pill pill-cyan">{{ transactions|length }} операция</span>
+            </div>
+
+            {% if transactions %}
+                {{ tx_table(transactions, "transactions", true, true) }}
+                {% if transactions|length == 50 %}
+                    <p class="hint">Соңғы 50 жазба көрсетіледі.</p>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    {{ icon('arrow-left-right', 32) }}
+                    <p>Операциялар жоқ.</p>
+                    <p>Сол жақтағы формаға бірінші кірісіңді немесе шығысыңды енгіз.</p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</section>
+{% endblock %}

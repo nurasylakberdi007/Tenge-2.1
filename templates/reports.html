@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Қаржылық есептер{% endblock %}
+{% block page_title %}Қаржылық есептер{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <p class="page-sub">Операцияларыңыздың есебін қалыптастырып, файл ретінде жүктеп алыңыз.</p>
+    <span class="pill pill-cyan">{{ icon('database', 14) }} {{ reports|length }} сақталған есеп</span>
+</div>
+
+<section aria-labelledby="report-types-title">
+    <div class="section-head">
+        <div>
+            <h2 id="report-types-title">Есеп түрі</h2>
+            <p class="section-sub">Керек есепті таңдаңыз — сүзгілер сақталады.</p>
+        </div>
+    </div>
+
+    <div class="cards-grid">
+        {% for item in report_types %}
+            <a class="panel report-type{% if filters.type == item.key %} is-active{% endif %}"
+               href="{{ url_for('reports', type=item.key, date_from=filters.date_from, date_to=filters.date_to, card=filters.card_id, format=filters.format) }}">
+                <div class="panel-head">
+                    <h2>{{ item.label }}</h2>
+                    {{ icon(item.icon, 20) }}
+                </div>
+                <p class="panel-sub">{{ item.description }}</p>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="panel" aria-labelledby="report-filters-title">
+    <div class="panel-head">
+        <h2 id="report-filters-title">Сүзгілер</h2>
+        {{ icon('calendar-days', 18) }}
+    </div>
+
+    <form action="{{ url_for('reports') }}" method="GET" class="form-grid">
+        <input type="hidden" name="type" value="{{ filters.type }}">
+
+        <div class="field">
+            <label for="filter-date-from">Басталатын күн</label>
+            <input type="date" id="filter-date-from" name="date_from" value="{{ filters.date_from }}">
+        </div>
+
+        <div class="field">
+            <label for="filter-date-to">Аяқталатын күн</label>
+            <input type="date" id="filter-date-to" name="date_to" value="{{ filters.date_to }}">
+        </div>
+
+        <div class="field">
+            <label for="filter-card">Карта</label>
+            <select id="filter-card" name="card">
+                <option value="">Барлық карталар</option>
+                {% for card in cards %}
+                    <option value="{{ card.id }}"{% if filters.card_id | string == card.id | string %} selected{% endif %}>
+                        {{ card.name }} · •••• {{ card.last_four }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="filter-format">Формат</label>
+            <select id="filter-format" name="format">
+                <option value="csv"{% if filters.format == 'csv' %} selected{% endif %}>CSV (.csv)</option>
+                <option value="html"{% if filters.format == 'html' %} selected{% endif %}>HTML (баспаға)</option>
+            </select>
+        </div>
+
+        <div class="form-actions field-wide">
+            <button class="btn btn-primary" type="submit">{{ icon('check', 17) }} Қолдану</button>
+            <a class="btn btn-ghost" href="{{ url_for('reports') }}">Сүзгілерді тазалау</a>
+        </div>
+    </form>
+</section>
+
+{% if filters_valid %}
+    <section class="panel" aria-labelledby="report-preview-title">
+        <div class="panel-head">
+            <h2 id="report-preview-title">{{ preview.title }}</h2>
+            <span class="pill pill-cyan">{{ icon('info', 13) }} Алдын ала көрініс</span>
+        </div>
+        <p class="panel-sub">{{ preview.note }}</p>
+
+        <div class="stats-grid">
+            <article class="stat-card">
+                <div class="stat-head">
+                    <span class="stat-icon stat-icon-green">{{ icon('arrow-down-left', 20) }}</span>
+                    <h2>Кіріс</h2>
+                </div>
+                <p class="stat-value">+{{ preview.income | money }} <span class="unit">₸</span></p>
+            </article>
+            <article class="stat-card">
+                <div class="stat-head">
+                    <span class="stat-icon stat-icon-orange">{{ icon('arrow-up-right', 20) }}</span>
+                    <h2>Шығыс</h2>
+                </div>
+                <p class="stat-value">−{{ preview.expense | money }} <span class="unit">₸</span></p>
+            </article>
+            <article class="stat-card">
+                <div class="stat-head">
+                    <span class="stat-icon stat-icon-cyan">{{ icon('wallet', 20) }}</span>
+                    <h2>Таза қалдық</h2>
+                </div>
+                <p class="stat-value">{{ preview.net | money }} <span class="unit">₸</span></p>
+            </article>
+            <article class="stat-card">
+                <div class="stat-head">
+                    <span class="stat-icon stat-icon-cyan">{{ icon('arrow-left-right', 20) }}</span>
+                    <h2>Операциялар</h2>
+                </div>
+                <p class="stat-value">{{ preview.tx_count }} <span class="unit">дана</span></p>
+            </article>
+        </div>
+
+        {% if preview.rows %}
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            {% for header in preview.headers %}
+                                <th scope="col">{{ header }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in preview.rows %}
+                            <tr>
+                                {% for cell in row %}
+                                    <td>{{ cell }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state empty-state-sm">
+                {{ icon('arrow-left-right', 28) }}
+                <p>Таңдалған сүзгілерге сәйкес операциялар жоқ.</p>
+                <p>Басқа күн аралығын немесе картаны таңдап көріңіз.</p>
+            </div>
+        {% endif %}
+
+        <form action="{{ url_for('download_report') }}" method="POST" class="form-actions">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="type" value="{{ filters.type }}">
+            <input type="hidden" name="date_from" value="{{ filters.date_from }}">
+            <input type="hidden" name="date_to" value="{{ filters.date_to }}">
+            <input type="hidden" name="card_id" value="{{ filters.card_id }}">
+            <input type="hidden" name="format" value="{{ filters.format }}">
+            <button class="btn btn-primary" type="submit">
+                {{ icon('download', 17) }} Есепті жүктеу
+            </button>
+        </form>
+        <p class="hint">{{ icon('shield-check', 13) }} <span>Есеп тек сіздің операцияларыңызды қамтиды.</span></p>
+    </section>
+{% else %}
+    <section class="panel danger-panel" aria-labelledby="report-error-title">
+        <div class="panel-head">
+            <h2 id="report-error-title">Сүзгілер дұрыс емес</h2>
+            {{ icon('alert-triangle', 18) }}
+        </div>
+        <p class="panel-sub">Алдын ала көрініс қалыптастыру үшін күн аралығын тексеріп, қайтадан қолдаңыз. Есепті жүктеу үшін сүзгілер жарамды болуы керек.</p>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('reports') }}">Сүзгілерді тазалау</a>
+    </section>
+{% endif %}
+
+<div class="content-grid">
+    <div class="content-grid-main">
+        <section class="panel" aria-labelledby="saved-reports-title">
+            <div class="panel-head">
+                <h2 id="saved-reports-title">Сақталған есептер</h2>
+                <span class="pill">{{ reports|length }}</span>
+            </div>
+
+            {% if reports %}
+                <ul class="report-list">
+                    {% for report in reports %}
+                        <li class="report-item">
+                            <span class="report-icon">{{ icon('download', 18) }}</span>
+                            <span class="report-main">
+                                <strong>{{ report.title }}</strong>
+                                <span>{{ report.report_type }} · {{ report.date_from }} — {{ report.date_to }}</span>
+                            </span>
+                            <span class="pill">{{ report.format | upper }}</span>
+                            <span class="report-date">{{ report.created_at }}</span>
+                            <div class="report-actions">
+                                <a class="btn btn-ghost btn-sm"
+                                   href="{{ url_for('download_saved_report', report_id=report.id) }}">
+                                    {{ icon('download', 15) }} Жүктеу
+                                </a>
+                                <form action="{{ url_for('delete_report', report_id=report.id) }}" method="POST"
+                                      data-confirm="«{{ report.title }}» есебін жою керек пе?">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="btn btn-danger btn-sm" type="submit" aria-label="Есепті жою">
+                                        {{ icon('trash-2', 15) }}
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-state empty-state-sm">
+                    {{ icon('database', 28) }}
+                    <p>Әзірге сақталған есеп жоқ.</p>
+                    <p>Есепті жүктегенде ол осы тізімде пайда болады.</p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="content-grid-side">
+        <section class="panel" aria-labelledby="report-help-title">
+            <div class="panel-head">
+                <h2 id="report-help-title">Есеп туралы</h2>
+                {{ icon('info', 18) }}
+            </div>
+            <p class="panel-sub">Есеп таңдалған күн аралығындағы кірістер мен шығыстарды жинақтайды. Карта таңдалса, тек соның операциялары енеді.</p>
+            <p class="hint">{{ icon('globe', 13) }} <span>Файл UTF-8 кодтауында сақталады.</span></p>
+        </section>
+    </div>
+</div>
+{% endblock %}

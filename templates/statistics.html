@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Статистика{% endblock %}
+{% block page_title %}Статистика{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <p class="page-sub">Айлық қаржы көрсеткіштері, санаттар үлесі және пайдалы ескертулер.</p>
+    <span class="pill pill-cyan">{{ icon('calendar-days', 14) }} {{ month_label }}</span>
+</div>
+
+<nav class="month-nav" aria-label="Ай таңдау">
+    {% if has_prev %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('statistics', month=prev_month) }}">
+            {{ icon('arrow-left', 16) }} Алдыңғы ай
+        </a>
+    {% else %}
+        <span class="btn btn-ghost btn-sm is-hidden" aria-hidden="true">{{ icon('arrow-left', 16) }} Алдыңғы ай</span>
+    {% endif %}
+
+    <strong class="month-current">{{ month_label }}</strong>
+
+    {% if has_next %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('statistics', month=next_month) }}">
+            Кейінгі ай {{ icon('arrow-right', 16) }}
+        </a>
+    {% else %}
+        <span class="btn btn-ghost btn-sm is-hidden" aria-hidden="true">Кейінгі ай {{ icon('arrow-right', 16) }}</span>
+    {% endif %}
+</nav>
+
+<section class="stats-grid" aria-label="Айдың негізгі көрсеткіштері">
+    <article class="stat-card stat-kpi">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-green">{{ icon('arrow-down-left', 20) }}</span>
+            <h2>Кіріс</h2>
+        </div>
+        <p class="stat-value kpi-value">+{{ stats.income | money }} <span class="unit">₸</span></p>
+        <p class="stat-note is-green">
+            {% if stats.income_change is not none %}
+                {{ icon('arrow-down-left' if stats.income_change >= 0 else 'arrow-up-right', 13) }}
+                <span class="kpi-note">{{ '%+d'|format(stats.income_change) }}% · өткен аймен салыстырғанда</span>
+            {% else %}
+                {{ icon('info', 13) }} <span class="kpi-note">Өткен айдың дерегі жоқ</span>
+            {% endif %}
+        </p>
+    </article>
+
+    <article class="stat-card stat-kpi">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-orange">{{ icon('arrow-up-right', 20) }}</span>
+            <h2>Шығыс</h2>
+        </div>
+        <p class="stat-value kpi-value">−{{ stats.expense | money }} <span class="unit">₸</span></p>
+        <p class="stat-note is-orange">
+            {% if stats.expense_change is not none %}
+                {{ icon('arrow-up-right' if stats.expense_change >= 0 else 'arrow-down-left', 13) }}
+                <span class="kpi-note">{{ '%+d'|format(stats.expense_change) }}% · өткен аймен салыстырғанда</span>
+            {% else %}
+                {{ icon('info', 13) }} <span class="kpi-note">Өткен айдың дерегі жоқ</span>
+            {% endif %}
+        </p>
+    </article>
+
+    <article class="stat-card stat-kpi">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-cyan">{{ icon('wallet', 20) }}</span>
+            <h2>Таза қалдық</h2>
+        </div>
+        <p class="stat-value kpi-value">{{ stats.net | money }} <span class="unit">₸</span></p>
+        <p class="stat-note is-cyan">
+            {{ icon('info', 13) }} <span class="kpi-note">Кіріс пен шығыс айырмасы</span>
+        </p>
+    </article>
+
+    <article class="stat-card stat-kpi">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-cyan">{{ icon('piggy-bank', 20) }}</span>
+            <h2>Жинақ нормасы</h2>
+        </div>
+        <p class="stat-value kpi-value">{{ stats.savings_rate }}<span class="unit">%</span></p>
+        <p class="stat-note">
+            {{ icon('banknote', 13) }} <span class="kpi-note">{{ stats.tx_count }} операция тіркелді</span>
+        </p>
+    </article>
+</section>
+
+{% set values = (months | map(attribute='income') | list) + (months | map(attribute='expense') | list) %}
+{% set max_value = values | max if values else 0 %}
+
+<div class="content-grid">
+    <div class="content-grid-main">
+        <section class="panel" aria-labelledby="chart-title">
+            <div class="panel-head">
+                <h2 id="chart-title">Айлар бойынша қаржы ағымы</h2>
+                <span class="pill pill-cyan">Соңғы 6 ай</span>
+            </div>
+            <p class="panel-sub">Кіріс пен шығыс бір бағанда салыстырылады.</p>
+
+            {% if months %}
+                <div class="bars-chart" role="img" aria-label="Айлар бойынша кіріс пен шығыс диаграммасы">
+                    {% for m in months %}
+                        <div class="bar-item">
+                            <div class="bar-values">
+                                <span class="text-green">+{{ m.income | money }}</span>
+                                <span class="text-orange">−{{ m.expense | money }}</span>
+                            </div>
+                            <div class="bar-track">
+                                <span class="bar-income" style="width: {% if max_value %}{{ (m.income / max_value * 100) | round | int }}{% else %}0{% endif %}%"></span>
+                                <span class="bar-expense" style="width: {% if max_value %}{{ (m.expense / max_value * 100) | round | int }}{% else %}0{% endif %}%"></span>
+                            </div>
+                            <span class="bar-label">{{ m.label }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state empty-state-sm">
+                    {{ icon('layout-dashboard', 28) }}
+                    <p>Соңғы айларда дерек жоқ.</p>
+                    <p>Операция қосқанда диаграмма автоматты түрде толтырылады.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        {% if insights %}
+            <section class="panel" aria-labelledby="insights-title">
+                <div class="panel-head">
+                    <h2 id="insights-title">Қаржылық кеңестер</h2>
+                    {{ icon('info', 18) }}
+                </div>
+                <div class="insight-list">
+                    {% for item in insights %}
+                        <article class="insight insight-{{ item.tone }}">
+                            <span class="insight-icon">{{ icon(item.icon, 20) }}</span>
+                            <div>
+                                <h3>{{ item.title }}</h3>
+                                <p>{{ item.text }}</p>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+    </div>
+
+    <div class="content-grid-side">
+        <section class="panel" aria-labelledby="shares-title">
+            <div class="panel-head">
+                <h2 id="shares-title">Шығыс санаттарының үлесі</h2>
+                <span class="pill">{{ shares|length }} санат</span>
+            </div>
+            <p class="panel-sub">{{ month_label }} айындағы шығыстардың бөлінуі.</p>
+
+            {% if shares %}
+                <div class="share-list">
+                    {% for share in shares %}
+                        <div class="share-row">
+                            <div class="share-meta">
+                                <span class="share-name">
+                                    {{ icon(share.icon, 16) }} {{ share.name }}
+                                </span>
+                                <strong>{{ share.percent }}% · {{ share.amount | money }} ₸</strong>
+                            </div>
+                            <div class="progress">
+                                <span class="share-bar" style="width: {{ share.percent }}%; background: {{ share.color }}"></span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state empty-state-sm">
+                    {{ icon('piggy-bank', 28) }}
+                    <p>Бұл айда шығыс санаттары жоқ.</p>
+                    <p>Шығыс операциясын қосқанда үлестер осы жерде пайда болады.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        {% if not insights %}
+            <section class="panel" aria-labelledby="stat-empty-title">
+                <div class="panel-head">
+                    <h2 id="stat-empty-title">Ескертулер</h2>
+                    {{ icon('info', 18) }}
+                </div>
+                <p class="panel-sub">Деректер жиналған соң қаржыңыз бойынша пайдалы кеңестер осында шығады.</p>
+            </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

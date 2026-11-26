@@ -1,46 +1,58 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}Кіру{% endblock %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">{% endblock %}
+{% block page_title %}Кіру{% endblock %}
 {% block body_class %}auth-page{% endblock %}
-{% block header %}{% endblock %}
 
 {% block content %}
-<main class="auth">
-    <aside class="auth-brand">
-        <a href="{{ url_for('about') }}" aria-label="Tenge туралы">
-            <img class="auth-logo" src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Tenge">
-        </a>
-        <div>
-            <h2>Теңге тиыннан құралады</h2>
-            <p>Tenge-кіріс,шығысты бақыла және болашаққа жоспар құрастыр.</p>
-        </div>
-    </aside>
-
-    <section class="auth-panel">
-        <div class="auth-box">
-            <h1>Жүйеге кіру</h1>
-            <p class="muted">Email мен құпиясөзді енгізіңіз.</p>
-
-            <form class="form-grid" method="POST" action="{{ url_for('login') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <div class="field field-wide">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" value="{{ form.get('email', '') }}"
-                           autocomplete="email" required autofocus>
-                </div>
-
-                <div class="field field-wide">
-                    <label for="password">Құпиясөз</label>
-                    <input type="password" id="password" name="password" autocomplete="current-password" required>
-                </div>
-
-                <button class="btn field-wide" type="submit">Кіру</button>
-            </form>
-
-            <p class="auth-switch">Аккаунтың жоқ па? <a href="{{ url_for('register') }}">Тіркелу</a></p>
-        </div>
+<div class="auth-layout">
+    <section class="auth-copy" aria-labelledby="auth-copy-title">
+        <span class="pill pill-cyan">Жеке қаржыға жаңа көзқарас</span>
+        <h2 id="auth-copy-title">Әр теңгеңізге<br>айқын бағыт.</h2>
+        <p>Барлық карталарыңыз, шығындарыңыз бен жинағыңыз — бір түсінікті кеңістікте.</p>
     </section>
-</main>
+
+    <section class="auth-card" aria-labelledby="login-title">
+        <p class="eyebrow">Жеке кабинет</p>
+        <h1 id="login-title">Қайта қош келдіңіз!</h1>
+        <p class="auth-sub">Қаржыңызды басқаруды жалғастыру үшін кіріңіз.</p>
+
+        <form class="auth-form" method="POST" action="{{ url_for('login') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="field">
+                <label for="email">Электрондық пошта</label>
+                <div class="input-wrap">
+                    <input type="email" id="email" name="email" value="{{ form.get('email', '') }}"
+                           placeholder="aidana@pochta.kz" autocomplete="email" required autofocus>
+                    <span class="input-icon">{{ icon('mail', 18) }}</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="password">Құпиясөз</label>
+                <div class="input-wrap">
+                    <input type="password" id="password" name="password"
+                           placeholder="••••••••" autocomplete="current-password" required>
+                    <button class="input-icon input-icon-btn" type="button" data-password-toggle
+                            data-target="password" aria-label="Құпиясөзді көрсету" aria-pressed="false">
+                        <span data-eye-show>{{ icon('eye', 18) }}</span>
+                        <span data-eye-hide class="is-hidden">{{ icon('eye-off', 18) }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" type="submit">
+                <span>Кіру</span>{{ icon('arrow-right', 17) }}
+            </button>
+            <p class="auth-forgot"><a href="{{ url_for('forgot_password') }}">Құпиясөзді ұмыттыңыз ба?</a></p>
+        </form>
+
+        <div class="auth-divider" role="presentation"></div>
+
+        <p class="auth-switch">Тіркелгіңіз жоқ па? <a href="{{ url_for('register') }}">Тіркелу</a></p>
+        <p class="auth-secure">{{ icon('lock-keyhole', 16) }}<span>Қосылымыңыз қауіпсіз әрі шифрланған.</span></p>
+    </section>
+</div>
 {% endblock %}

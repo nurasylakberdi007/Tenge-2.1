@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Жинақ{% endblock %}
+{% block page_title %}Жинақ{% endblock %}
+
+{% block content %}
+<section class="transactions-section" aria-labelledby="savings-title">
+    <div class="section-head">
+        <div>
+            <h2 id="savings-title">Жинақ шоттары</h2>
+            <p class="section-sub">Салым, пайыз және шығыс бөлек есептеледі. Пайыз күн сайын қосылады.</p>
+        </div>
+        <a class="btn btn-primary" href="#add-savings">{{ icon('plus', 17) }} Жинақ ашу</a>
+    </div>
+
+    <div class="two-columns content-start">
+        <section class="panel" id="add-savings" aria-labelledby="add-savings-title">
+            <div class="panel-head">
+                <h2 id="add-savings-title">Жаңа жинақ</h2>
+                <span class="pill">Жинақ ашу</span>
+            </div>
+
+            <form class="form-grid" action="{{ url_for('create_savings') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="field field-wide">
+                    <label for="saving-name">Жинақ атауы</label>
+                    <input type="text" id="saving-name" name="name" maxlength="50"
+                           placeholder="Мысалы: Жинақ қоры" autocomplete="off" required>
+                </div>
+
+                <div class="field">
+                    <label for="saving-initial">Бастапқы салым, ₸</label>
+                    <input type="number" id="saving-initial" name="initial_amount"
+                           min="0" max="1000000000" step="0.01" value="0" required>
+                </div>
+
+                <div class="field">
+                    <label for="saving-rate">Жылдық пайыз, %</label>
+                    <input type="number" id="saving-rate" name="annual_rate"
+                           min="0" max="100" step="0.01" value="0" required>
+                </div>
+
+                <div class="field field-wide">
+                    <label for="saving-start">Салым басталған күні</label>
+                    <input type="date" id="saving-start" name="start_date"
+                           value="{{ today.isoformat() }}" max="{{ today.isoformat() }}" required>
+                </div>
+
+                <button class="btn btn-primary field-wide" type="submit">
+                    {{ icon('piggy-bank', 17) }} Жинақ ашу
+                </button>
+            </form>
+        </section>
+
+        <section class="panel" aria-labelledby="savings-summary-title">
+            <div class="panel-head">
+                <h2 id="savings-summary-title">Жинақ қорытындысы</h2>
+                <span class="pill pill-cyan">Күндік пайыз</span>
+            </div>
+            <dl class="info-list">
+                <div><dt>Ағымдағы жинақ балансы</dt><dd>{{ summary['balance'] | money }} ₸</dd></div>
+                <div><dt>Жиналған пайыз</dt><dd class="text-green">+{{ summary['interest'] | money }} ₸</dd></div>
+                <div><dt>Жинақ шоттары</dt><dd>{{ summary['accounts_count'] }}</dd></div>
+            </dl>
+            <p class="hint">Пайыз күн сайын есептеліп, келесі күннің балансына қосылады.</p>
+        </section>
+    </div>
+
+    {% for account in accounts %}
+    <section class="panel" aria-labelledby="saving-{{ account['id'] }}-title">
+        <div class="panel-head">
+            <h2 id="saving-{{ account['id'] }}-title">{{ account['name'] }}</h2>
+            <span class="pill pill-cyan">{{ account['annual_rate'] }}% жылдық</span>
+        </div>
+
+        <div class="two-columns content-start">
+            <div>
+                <dl class="info-list">
+                    <div><dt>Ағымдағы баланс</dt><dd><strong>{{ account['current_balance'] | money }} ₸</strong></dd></div>
+                    <div><dt>Бастапқы салым</dt><dd>{{ account['initial_amount'] | money }} ₸</dd></div>
+                    <div><dt>Қосымша салымдар</dt><dd>+{{ account['additional_deposits'] | money }} ₸</dd></div>
+                    <div><dt>Жиналған пайыз</dt><dd class="text-green">+{{ account['accumulated_interest'] | money }} ₸</dd></div>
+                    <div><dt>Алынған ақша</dt><dd class="text-orange">−{{ account['withdrawals'] | money }} ₸</dd></div>
+                    <div><dt>Күндік пайыз</dt><dd class="text-green">+{{ (account['daily_interest'] or 0) | money }} ₸</dd></div>
+                    <div><dt>Жылдық пайыз мөлшері</dt><dd>{{ account['annual_rate'] }}%</dd></div>
+                    <div><dt>Басталған күні</dt><dd>{{ account['start_date'] | date_kz }}</dd></div>
+                </dl>
+            </div>
+
+            <div>
+                <section class="panel" aria-labelledby="saving-{{ account['id'] }}-deposit-title">
+                    <div class="panel-head">
+                        <h2 id="saving-{{ account['id'] }}-deposit-title">Салым қосу</h2>
+                        <span class="pill">Өз күнінен бастап пайыз</span>
+                    </div>
+                    <form class="form-grid" action="{{ url_for('deposit_savings', account_id=account['id']) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="field">
+                            <label for="deposit-amount-{{ account['id'] }}">Сома, ₸</label>
+                            <input type="number" id="deposit-amount-{{ account['id'] }}" name="amount"
+                                   min="0.01" max="1000000000" step="0.01" required>
+                        </div>
+                        <div class="field">
+                            <label for="deposit-date-{{ account['id'] }}">Күні</label>
+                            <input type="date" id="deposit-date-{{ account['id'] }}" name="occurred_on"
+                                   value="{{ today.isoformat() }}" max="{{ today.isoformat() }}" required>
+                        </div>
+                        <div class="field field-wide">
+                            <label for="deposit-note-{{ account['id'] }}">Сипаттама <span class="optional">міндетті емес</span></label>
+                            <input type="text" id="deposit-note-{{ account['id'] }}" name="description" maxlength="300">
+                        </div>
+                        <button class="btn btn-primary field-wide" type="submit">Салым қосу</button>
+                    </form>
+                </section>
+
+                <section class="panel" aria-labelledby="saving-{{ account['id'] }}-withdraw-title">
+                    <div class="panel-head">
+                        <h2 id="saving-{{ account['id'] }}-withdraw-title">Ақша алу</h2>
+                        <span class="pill">Пайыз алынған сомаға есептелмейді</span>
+                    </div>
+                    <form class="form-grid" action="{{ url_for('withdraw_savings', account_id=account['id']) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="field">
+                            <label for="withdraw-amount-{{ account['id'] }}">Сома, ₸</label>
+                            <input type="number" id="withdraw-amount-{{ account['id'] }}" name="amount"
+                                   min="0.01" max="1000000000" step="0.01" required>
+                        </div>
+                        <div class="field">
+                            <label for="withdraw-date-{{ account['id'] }}">Күні</label>
+                            <input type="date" id="withdraw-date-{{ account['id'] }}" name="occurred_on"
+                                   value="{{ today.isoformat() }}" max="{{ today.isoformat() }}" required>
+                        </div>
+                        <button class="btn btn-primary field-wide" type="submit">Ақша алу</button>
+                    </form>
+                </section>
+
+                <section class="panel" aria-labelledby="saving-{{ account['id'] }}-edit-title">
+                    <div class="panel-head">
+                        <h2 id="saving-{{ account['id'] }}-edit-title">Жинақ деректерін өзгерту</h2>
+                    </div>
+                    <form class="form-grid" action="{{ url_for('edit_savings', account_id=account['id']) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="field field-wide">
+                            <label for="edit-name-{{ account['id'] }}">Атауы</label>
+                            <input type="text" id="edit-name-{{ account['id'] }}" name="name" maxlength="50"
+                                   value="{{ account['name'] }}" required>
+                        </div>
+                        <div class="field">
+                            <label for="edit-rate-{{ account['id'] }}">Жылдық пайыз, %</label>
+                            <input type="number" id="edit-rate-{{ account['id'] }}" name="annual_rate"
+                                   min="0" max="100" step="0.01" value="{{ account['annual_rate'] }}" required>
+                        </div>
+                        <div class="field">
+                            <label for="edit-start-{{ account['id'] }}">Басталған күні</label>
+                            <input type="date" id="edit-start-{{ account['id'] }}" name="start_date"
+                                   value="{{ account['start_date'] }}" max="{{ today.isoformat() }}" required>
+                        </div>
+                        <button class="btn btn-primary field-wide" type="submit">Сақтау</button>
+                    </form>
+                </section>
+
+                <form action="{{ url_for('delete_savings', account_id=account['id']) }}" method="POST"
+                      data-confirm="Жинақ шотын жою керек пе? Барлық салымдар мен пайыз жазбалары жойылады.">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-danger btn-block" type="submit">
+                        {{ icon('trash-2', 16) }} Жинақ шотын жою
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+    {% else %}
+    <div class="empty-state">
+        {{ icon('piggy-bank', 32) }}
+        <p>Әзірге жинақ шоты жоқ. Жоғарыдағы «Жинақ ашу» формасымен бірінші шотты қосыңыз.</p>
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}

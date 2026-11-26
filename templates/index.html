@@ -1,50 +1,289 @@
 {% extends "base.html" %}
-{% from "_macros.html" import transaction_row with context %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import pay_card, tx_table with context %}
 
 {% block title %}Басты бет{% endblock %}
+{% block page_title %}Басты бет{% endblock %}
+{% block body_class %}index-page{% endblock %}
 
 {% block content %}
-<main class="container">
-    <div class="page-head">
-        <h1>{{ g.user.username }}</h1>
-        <p class="muted">{{ today | date_kz }}</p>
+<div class="greeting">
+    <p>Қайырлы күн, {{ g.user.username }}! Қаржыңызға шолу жасайық.</p>
+    <span class="date-chip">{{ icon('calendar-days', 15) }} {{ today | date_kz }}</span>
+</div>
+
+<section class="stats-grid" aria-label="Қаржы қорытындысы">
+    <article class="stat-card">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-cyan">{{ icon('wallet', 20) }}</span>
+            <h2>Жалпы баланс</h2>
+        </div>
+        <p class="stat-value">{{ balance | money }} <span class="unit">₸</span></p>
+        <p class="stat-note is-cyan">
+            {% if cards_opening > 0 %}
+                {{ icon('info', 13) }} <span>Карталардың бастапқы қалдығы: {{ cards_opening | money }} ₸</span>
+            {% else %}
+                {{ icon('info', 13) }} <span>Барлық операциялар бойынша есептелген</span>
+            {% endif %}
+        </p>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-green">{{ icon('arrow-down-left', 20) }}</span>
+            <h2>Жалпы кіріс</h2>
+        </div>
+        <p class="stat-value">+{{ deposit | money }} <span class="unit">₸</span></p>
+        <p class="stat-note is-green">{{ icon('check', 13) }} <span>Барлық кіріс операциялары</span></p>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-orange">{{ icon('arrow-up-right', 20) }}</span>
+            <h2>Жалпы шығыс</h2>
+        </div>
+        <p class="stat-value">−{{ expense | money }} <span class="unit">₸</span></p>
+        <p class="stat-note is-orange">
+            {% if income > 0 %}
+                {{ icon('info', 13) }} <span>Кірістің {{ spent_percent }}%-ы жұмсалды</span>
+            {% else %}
+                {{ icon('info', 13) }} <span>Кіріс әлі енгізілмеген</span>
+            {% endif %}
+        </p>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-head">
+            <span class="stat-icon stat-icon-cyan">{{ icon('piggy-bank', 20) }}</span>
+            <h2>Таза жинақ</h2>
+        </div>
+        <p class="stat-value">{{ savings_balance | money }} <span class="unit">₸</span></p>
+        <p class="stat-note {% if savings_balance > 0 %}is-green{% endif %}">
+            {{ icon('piggy-bank', 13) }}
+            <span>
+                {% if savings_accounts %}
+                    {{ savings_accounts|length }} жинақ шоты · пайыз {{ savings_interest | money }} ₸
+                {% else %}
+                    Жинақ шотын ашыңыз
+                {% endif %}
+            </span>
+        </p>
+    </article>
+</section>
+
+<section class="section" aria-labelledby="dashboard-savings-title">
+    <div class="section-head">
+        <div>
+            <h2 id="dashboard-savings-title">Жинақ</h2>
+            <p class="section-sub">Салымдар мен пайыз шығыстан тәуелсіз есептеледі.</p>
+        </div>
+        <a class="btn btn-primary" href="{{ url_for('savings') }}#add-savings">
+            {{ icon('plus', 17) }} Жинақ ашу
+        </a>
     </div>
 
-    <section class="stats" aria-label="Қаржы қорытындысы">
-        <article class="stat stat-balance">
-            <h2>Жалпы баланс</h2>
-            <p class="stat-value">{{ balance | money }} ₸</p>
-            <div class="spend">
-                <progress class="spend-meter" max="100" value="{{ spent_percent }}"></progress>
-                <p class="stat-note">
+    <div class="two-columns content-start">
+        <section class="panel" aria-labelledby="dashboard-savings-summary">
+            <div class="panel-head">
+                <h2 id="dashboard-savings-summary">Жинақ қорытындысы</h2>
+                <span class="pill pill-cyan">Күндік пайыз</span>
+            </div>
+            <dl class="info-list">
+                <div><dt>Ағымдағы жинақ балансы</dt><dd>{{ savings_balance | money }} ₸</dd></div>
+                <div><dt>Жиналған пайыз</dt><dd class="text-green">+{{ savings_interest | money }} ₸</dd></div>
+                <div><dt>Жинақ шоттары</dt><dd>{{ savings_accounts|length }}</dd></div>
+            </dl>
+            <p class="hint"><a href="{{ url_for('savings') }}">Жинақты басқару →</a></p>
+        </section>
+
+        <section class="panel" aria-labelledby="dashboard-savings-list">
+            <div class="panel-head">
+                <h2 id="dashboard-savings-list">Менің жинақтарым</h2>
+                <a class="panel-link" href="{{ url_for('savings') }}">Барлығын көру →</a>
+            </div>
+            {% if savings_accounts %}
+                <ul class="account-list">
+                    {% for account in savings_accounts %}
+                        <li class="account-row">
+                            <span class="account-icon">{{ icon('piggy-bank', 22) }}</span>
+                            <span class="account-main">
+                                <strong>{{ account['name'] }}</strong>
+                                <span>{{ account['annual_rate'] }}% · {{ account['start_date'] | date_kz }}</span>
+                            </span>
+                            <span class="account-amount">{{ account['current_balance'] | money }} ₸</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-state empty-state-sm">
+                    {{ icon('piggy-bank', 28) }}
+                    <p>Әзірге жинақ шоты жоқ.</p>
+                    <a class="btn btn-ghost btn-sm" href="{{ url_for('savings') }}#add-savings">Жинақ ашу</a>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</section>
+
+<div class="dash-grid">
+    <div class="dash-left">
+        {% if cards %}
+            {{ pay_card(cards[0], g.user.username) }}
+        {% else %}
+            <a class="pay-card pay-card-empty" href="{{ url_for('cards') }}#add-card">
+                <span class="pay-card-top">
+                    <span class="pay-card-name">Карта қосылмаған</span>
+                    <span class="card-chip" aria-hidden="true"></span>
+                </span>
+                <span class="pay-card-balance">0 <span class="unit">₸</span></span>
+                <span class="pay-card-number">•••• •••• •••• ••••</span>
+                <span class="pay-card-bottom">
+                    <span class="pay-card-holder">Карта қосу үшін басыңыз</span>
+                    {{ icon('plus', 17) }}
+                </span>
+            </a>
+        {% endif %}
+
+        <section class="panel accounts-panel" aria-labelledby="accounts-title">
+            <div class="panel-head">
+                <h2 id="accounts-title">Менің карталарым</h2>
+                {% if cards %}<a class="panel-link" href="{{ url_for('cards') }}">Барлығын көру →</a>{% endif %}
+            </div>
+            <p class="panel-sub">Қаражаттың карталар бойынша бөлінуі</p>
+
+            {% if cards %}
+                <ul class="account-list">
+                    {% for c in cards[:3] %}
+                        {% set share = ((c['balance'] * 100 / cards_total) | round | int) if cards_total > 0 and c['balance'] > 0 else 0 %}
+                        <li class="account-row">
+                            <span class="account-icon">{{ icon('credit-card', 22) }}</span>
+                            <span class="account-main">
+                                <strong>{{ c['name'] }}</strong>
+                                <span>{{ share }}% · {{ c['bank_name'] }}</span>
+                            </span>
+                            <span class="account-amount">{{ c['balance'] | money }} ₸</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                {% if cards|length > 3 %}
+                    <p class="progress-note">Тағы {{ cards|length - 3 }} карта бар</p>
+                {% endif %}
+
+                <div class="accounts-foot">
+                    <span>Барлығы {{ cards|length }} карта</span>
+                    <a href="{{ url_for('cards') }}">Карталарды басқару →</a>
+                </div>
+
+                <div class="progress" role="img" aria-label="Кірістің {{ spent_percent }} пайызы жұмсалды">
+                    <span style="width: {{ spent_percent }}%"></span>
+                </div>
+                <p class="progress-note">
                     {% if income > 0 %}
-                        Кірістің {{ spent_percent }}% жұмсалды
-                    {% elif expense > 0 %}
-                        Кіріс жоқ, шығыс бар
-                    {% elif cards_opening == 0 %}
-                        Кіріс пен шығыс қосылған кезде мұнда көрінеді
-                    {% endif %}
-                    {% if cards_opening > 0 %}
-                        <span class="stat-sub">Карталардың бастапқы қалдығы: {{ cards_opening | money }} ₸</span>
+                        Қаражаттың {{ 100 - spent_percent }}%-ы қалды · кірістің {{ spent_percent }}%-ы жұмсалды
+                    {% else %}
+                        Карталардағы жалпы қаражат: {{ cards_total | money }} ₸
                     {% endif %}
                 </p>
+            {% else %}
+                <div class="empty-state empty-state-sm">
+                    {{ icon('credit-card', 28) }}
+                    <p>Әзірге карта қосылмаған.</p>
+                    <a class="btn btn-ghost btn-sm" href="{{ url_for('cards') }}#add-card">Карта қосу</a>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="dash-right">
+        <section class="panel finance-panel" aria-labelledby="finance-title">
+            <div class="panel-head">
+                <h2 id="finance-title">Қаржы қорытындысы</h2>
+                <span class="pill pill-cyan">Теңге · ₸</span>
             </div>
-        </article>
 
-        <article class="stat stat-income">
-            <h2>Жалпы кіріс</h2>
-            <p class="stat-value">+{{ income | money }} ₸</p>
-        </article>
+            <div class="finance-total">
+                <span>Ағымдағы баланс</span>
+                <strong>{{ balance | money }} ₸</strong>
+            </div>
 
-        <article class="stat stat-expense">
-            <h2>Жалпы шығыс</h2>
-            <p class="stat-value">−{{ expense | money }} ₸</p>
-        </article>
-    </section>
+            <div class="finance-bars">
+                <div class="bar-row">
+                    <div class="bar-head">
+                        <span>Кіріс</span>
+                        <strong class="text-green">+{{ deposit | money }} ₸</strong>
+                    </div>
+                    <div class="progress">
+                        <span class="fill-green" style="width: {{ 100 if income > 0 else 0 }}%"></span>
+                    </div>
+                </div>
+                <div class="bar-row">
+                    <div class="bar-head">
+                        <span>Шығыс</span>
+                        <strong class="text-orange">−{{ expense | money }} ₸</strong>
+                    </div>
+                    <div class="progress">
+                        <span class="fill-orange" style="width: {{ spent_percent }}%"></span>
+                    </div>
+                </div>
+            </div>
 
-    <div class="dashboard-grid">
-        <section class="panel">
-            <h2>Операция қосу</h2>
+            <div class="finance-split">
+                <div>
+                    <span>Кіріс − шығыс</span>
+                    <strong>{{ (income - expense) | money }} ₸</strong>
+                </div>
+                <div>
+                    <span>Жұмсалды</span>
+                    <strong>{{ spent_percent }}%</strong>
+                </div>
+            </div>
+
+            <p class="finance-note">
+                {{ icon('info', 13) }}
+                {% if income > 0 %}
+                    <span>Кіріс 100% деп алынғанда шығыс үлесі осылай көрсетіледі.</span>
+                {% else %}
+                    <span>Кіріс енгізілгенде жұмсалған үлес автоматты есептеледі.</span>
+                {% endif %}
+            </p>
+        </section>
+
+        <section class="panel recent-panel" aria-labelledby="recent-title">
+            <div class="panel-head">
+                <h2 id="recent-title">Соңғы операциялар</h2>
+                <a class="panel-link" href="#transactions">Барлығын көру →</a>
+            </div>
+
+            {% if transactions %}
+                {{ tx_table(transactions[:3], "index", true, true) }}
+            {% else %}
+                <div class="empty-state empty-state-sm">
+                    {{ icon('arrow-left-right', 28) }}
+                    <p>Операциялар жоқ.</p>
+                    <a class="btn btn-ghost btn-sm" href="#transactions">Бірінші операцияны қосу</a>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+<section class="transactions-section" id="transactions" aria-labelledby="transactions-title">
+    <div class="section-head">
+        <div>
+            <h2 id="transactions-title">Операциялар</h2>
+            <p class="section-sub">Кіріс пен шығысты қосыңыз — баланс бірден жаңарады.</p>
+        </div>
+        <a class="btn btn-primary" href="#add-transaction">{{ icon('plus', 17) }} Операция қосу</a>
+    </div>
+
+    <div class="tx-layout">
+        <section class="panel" id="add-transaction" aria-labelledby="add-transaction-title">
+            <div class="panel-head">
+                <h2 id="add-transaction-title">Операция қосу</h2>
+                <span class="pill">Жаңа жазба</span>
+            </div>
+
             {% set form_id = "main" %}
             {% set next_page = "index" %}
             {% set form_card_id = None %}
@@ -52,21 +291,25 @@
             {% include "_transaction_form.html" %}
         </section>
 
-        <section class="panel">
-            <h2>Операциялар тарихы</h2>
+        <section class="panel tx-history" aria-labelledby="history-title">
+            <div class="panel-head">
+                <h2 id="history-title">Операциялар тарихы</h2>
+                <span class="pill pill-cyan">{{ transactions|length }} операция</span>
+            </div>
+
             {% if transactions %}
-                <ul class="tx-list">
-                    {% for t in transactions %}
-                        {{ transaction_row(t, "index", true) }}
-                    {% endfor %}
-                </ul>
+                {{ tx_table(transactions, "index", true, true) }}
+                {% if transactions|length == 50 %}
+                    <p class="hint">Соңғы 50 жазба көрсетіледі.</p>
+                {% endif %}
             {% else %}
-                <div class="empty">
+                <div class="empty-state">
+                    {{ icon('arrow-left-right', 32) }}
                     <p>Операциялар жоқ.</p>
                     <p>Сол жақтағы формаға бірінші кірісіңді немесе шығысыңды енгіз.</p>
                 </div>
             {% endif %}
         </section>
     </div>
-</main>
+</section>
 {% endblock %}

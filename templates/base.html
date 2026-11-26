@@ -8,50 +8,181 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Roboto:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
-    {% block header %}
-    <header class="site-header">
-        <div class="site-header-inner">
-            <a class="site-logo" href="{{ url_for('index') }}" aria-label="Tenge — басты бет">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Tenge">
+{% from "_icons.html" import icon %}
+
+<div class="shell{% if g.user %} app-shell{% else %} public-shell{% endif %}">
+    {% if g.user %}
+    <aside class="sidebar" aria-label="Бүйірлік мәзір">
+        <a class="brand" href="{{ url_for('index') }}" aria-label="Tenge — басты бет">
+            <span class="brand-mark" aria-hidden="true">₸</span>
+            <span class="brand-name">Tenge</span>
+        </a>
+
+        <nav class="side-nav" aria-label="Негізгі навигация">
+            <a class="nav-item{% if request.endpoint == 'index' %} is-active{% endif %}"
+               href="{{ url_for('index') }}"{% if request.endpoint == 'index' %} aria-current="page"{% endif %}>
+                {{ icon('layout-dashboard', 21) }}<span>Басты бет</span>
             </a>
+            <a class="nav-item{% if request.endpoint == 'cards' %} is-active{% endif %}"
+               href="{{ url_for('cards') }}"{% if request.endpoint == 'cards' %} aria-current="page"{% endif %}>
+                {{ icon('credit-card', 21) }}<span>Карталар</span>
+            </a>
+            <a class="nav-item{% if request.endpoint in ('savings', 'create_savings', 'edit_savings', 'deposit_savings', 'withdraw_savings', 'delete_savings') %} is-active{% endif %}"
+               href="{{ url_for('savings') }}"{% if request.endpoint == 'savings' %} aria-current="page"{% endif %}>
+                {{ icon('piggy-bank', 21) }}<span>Жинақ</span>
+            </a>
+            <a class="nav-item{% if request.endpoint == 'transactions' %} is-active{% endif %}"
+               href="{{ url_for('transactions') }}"{% if request.endpoint == 'transactions' %} aria-current="page"{% endif %}>
+                {{ icon('arrow-left-right', 21) }}<span>Операциялар</span>
+            </a>
+            <a class="nav-item{% if request.endpoint == 'categories' %} is-active{% endif %}"
+               href="{{ url_for('categories') }}"{% if request.endpoint == 'categories' %} aria-current="page"{% endif %}>
+                {{ icon('layout-grid', 21) }}<span>Санаттар</span>
+            </a>
+            <a class="nav-item{% if request.endpoint == 'statistics' %} is-active{% endif %}"
+               href="{{ url_for('statistics') }}"{% if request.endpoint == 'statistics' %} aria-current="page"{% endif %}>
+                {{ icon('chart-no-axes-combined', 21) }}<span>Статистика</span>
+            </a>
+            <a class="nav-item{% if request.endpoint in ('budgets', 'new_budget', 'edit_budget') %} is-active{% endif %}"
+               href="{{ url_for('budgets') }}"{% if request.endpoint in ('budgets', 'new_budget', 'edit_budget') %} aria-current="page"{% endif %}>
+                {{ icon('wallet', 21) }}<span>Бюджеттер</span>
+            </a>
+        </nav>
 
-            <nav class="site-nav" aria-label="Негізгі навигация">
-                {% if g.user %}
-                    <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>Басты бет</a>
-                    <a href="{{ url_for('cards') }}" {% if request.endpoint == 'cards' %}aria-current="page"{% endif %}>Карталар</a>
-                {% endif %}
-                <a href="{{ url_for('about') }}" {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>Жоба туралы</a>
-            </nav>
-
-            <div class="site-user">
-                {% if g.user %}
-                    <span class="user-name">{{ g.user.username }}</span>
-                    <form action="{{ url_for('logout') }}" method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button class="btn btn-ghost btn-small" type="submit">Шығу</button>
-                    </form>
-                {% else %}
-                    <a class="btn btn-ghost btn-small" href="{{ url_for('login') }}">Кіру</a>
-                    <a class="btn btn-small" href="{{ url_for('register') }}">Тіркелу</a>
-                {% endif %}
-            </div>
+        <div class="side-tip">
+            {{ icon('shield-check', 22) }}
+            <strong>Қаржыңыз өз қолыңызда</strong>
+            <p>Шығынды қадағалап, мақсатыңызға жақындаңыз.</p>
         </div>
-    </header>
-    {% endblock %}
 
-    <div class="flash-stack" role="status" aria-live="polite">
-        {% for category, message in get_flashed_messages(with_categories=true) %}
-            <p class="flash flash-{{ category if category in ('success', 'error') else 'success' }}">{{ message }}</p>
-        {% endfor %}
+        <nav class="side-nav side-nav-bottom" aria-label="Қосымша мәзір">
+            <a class="nav-item{% if request.endpoint == 'settings' %} is-active{% endif %}"
+               href="{{ url_for('settings') }}"{% if request.endpoint == 'settings' %} aria-current="page"{% endif %}>
+                {{ icon('settings-2', 21) }}<span>Баптаулар</span>
+            </a>
+            <form action="{{ url_for('logout') }}" method="POST" class="logout-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="nav-item nav-button" type="submit">
+                    {{ icon('log-out', 21) }}<span>Шығу</span>
+                </button>
+            </form>
+        </nav>
+    </aside>
+    {% endif %}
+
+    <div class="frame">
+        {% block header %}
+            {% if g.user %}
+            <header class="topbar">
+                <h1 class="topbar-title">{% block page_title %}Басты бет{% endblock %}</h1>
+                <div class="topbar-actions">
+                    <a class="icon-btn{% if request.endpoint in ('reports', 'download_saved_report') %} is-active{% endif %}"
+                       href="{{ url_for('reports') }}" aria-label="Қаржылық есептер" title="Қаржылық есептер">
+                        {{ icon('file-chart-column', 21) }}
+                    </a>
+                    <a class="icon-btn{% if request.endpoint in ('notifications', 'read_notification') %} is-active{% endif %}"
+                       href="{{ url_for('notifications') }}" aria-label="Хабарландырулар" title="Хабарландырулар">
+                        {{ icon('bell', 21) }}
+                        {% if unread_notifications %}<span class="icon-badge">{{ unread_notifications }}</span>{% endif %}
+                    </a>
+                    <a class="icon-btn{% if request.endpoint == 'help' %} is-active{% endif %}"
+                       href="{{ url_for('help') }}" aria-label="Көмек және қолдау" title="Көмек және қолдау">
+                        {{ icon('circle-help', 21) }}
+                    </a>
+                </div>
+                <details class="profile-menu" data-profile-menu>
+                    <summary class="profile" aria-label="Профиль мәзірін ашу">
+                        <span class="avatar" aria-hidden="true">{{ g.user.username | initials }}</span>
+                        <span class="profile-text">
+                            <strong>{{ g.user.username }}</strong>
+                            <small>Жеке кабинет</small>
+                        </span>
+                        {{ icon('chevron-down', 16, 1.8, 'profile-chevron') }}
+                    </summary>
+
+                    <div class="profile-dropdown">
+                        <div class="profile-dropdown-head">
+                            <strong>{{ g.user.username }}</strong>
+                            <span>{{ g.user.email }}</span>
+                        </div>
+                        <a class="dropdown-item{% if request.endpoint == 'profile' %} is-active{% endif %}"
+                           href="{{ url_for('profile') }}"{% if request.endpoint == 'profile' %} aria-current="page"{% endif %}>
+                            {{ icon('user', 18) }}<span>Жеке профиль</span>
+                        </a>
+                        <a class="dropdown-item{% if request.endpoint == 'settings' %} is-active{% endif %}"
+                           href="{{ url_for('settings') }}"{% if request.endpoint == 'settings' %} aria-current="page"{% endif %}>
+                            {{ icon('settings-2', 18) }}<span>Баптаулар</span>
+                        </a>
+                        <a class="dropdown-item{% if request.endpoint in ('reports', 'download_saved_report') %} is-active{% endif %}"
+                           href="{{ url_for('reports') }}">
+                            {{ icon('file-chart-column', 18) }}<span>Есептер</span>
+                        </a>
+                        <a class="dropdown-item{% if request.endpoint == 'help' %} is-active{% endif %}"
+                           href="{{ url_for('help') }}">
+                            {{ icon('circle-help', 18) }}<span>Көмек және қолдау</span>
+                        </a>
+                        <div class="dropdown-divider" aria-hidden="true"></div>
+                        <form action="{{ url_for('logout') }}" method="POST" class="dropdown-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="dropdown-item" type="submit">
+                                {{ icon('log-out', 18) }}<span>Шығу</span>
+                            </button>
+                        </form>
+                    </div>
+                </details>
+            </header>
+            {% else %}
+            <header class="public-header">
+                <a class="brand" href="{{ url_for('about') }}" aria-label="Tenge — жоба туралы">
+                    <span class="brand-mark" aria-hidden="true">₸</span>
+                    <span class="brand-name">Tenge</span>
+                </a>
+
+                <nav class="public-nav" aria-label="Навигация">
+                    {% if request.endpoint == 'login' %}
+                        <span class="public-note">Аккаунтыңыз бар ма?</span>
+                        <a class="btn btn-ghost btn-sm" href="{{ url_for('register') }}">Тіркелу</a>
+                    {% elif request.endpoint == 'register' %}
+                        <span class="public-note">Аккаунтыңыз бар ма?</span>
+                        <a class="btn btn-ghost btn-sm" href="{{ url_for('login') }}">Кіру</a>
+                    {% else %}
+                        <a class="public-link" href="{{ url_for('about') }}">Жоба туралы</a>
+                        <a class="btn btn-ghost btn-sm" href="{{ url_for('login') }}">Кіру</a>
+                        <a class="btn btn-primary btn-sm" href="{{ url_for('register') }}">Тіркелу</a>
+                    {% endif %}
+                </nav>
+            </header>
+            {% endif %}
+        {% endblock %}
+
+        <main class="{% if g.user %}page{% else %}public-page{% endif %}">
+            {% block content %}{% endblock %}
+        </main>
+
+        {% if not g.user %}
+        <footer class="public-footer">
+            <span>© {{ current_year }} Tenge. Барлық құқықтар қорғалған.</span>
+            <span>Жеке қаржыны бақылауға арналған қазақша қосымша</span>
+        </footer>
+        {% endif %}
     </div>
+</div>
 
-    {% block content %}{% endblock %}
+<div class="flash-stack" role="status" aria-live="polite">
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+        {% set kind = category if category in ('success', 'error') else 'success' %}
+        <p class="flash flash-{{ kind }}">
+            {{ icon('check' if kind == 'success' else 'alert-circle', 18) }}
+            <span>{{ message }}</span>
+        </p>
+    {% endfor %}
+</div>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
 </body>
 </html>

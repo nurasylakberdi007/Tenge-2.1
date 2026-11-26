@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Көмек және қолдау{% endblock %}
+{% block page_title %}Көмек және қолдау{% endblock %}
+
+{% block content %}
+<div class="help-page">
+    <section class="panel help-hero" aria-labelledby="help-title">
+        <span class="pill pill-cyan">Tenge қолдауы</span>
+        <h1 id="help-title">Көмек және қолдау</h1>
+        <p>Жиі қойылатын сұрақтардан жауап іздеңіз немесе қолдау қызметіне хабарлама жіберіңіз.</p>
+
+        <form class="help-search" method="GET" action="{{ url_for('help') }}" role="search">
+            <div class="input-wrap">
+                <label class="visually-hidden" for="help-q">Көмек бөлімінде іздеу</label>
+                <input type="search" id="help-q" name="q" value="{{ q }}"
+                       placeholder="Мысалы: карта, бюджет, құпиясөз" autocomplete="off">
+                <span class="input-icon">{{ icon('info', 18) }}</span>
+            </div>
+            <button class="btn btn-primary" type="submit">{{ icon('arrow-right', 17) }} Іздеу</button>
+        </form>
+    </section>
+
+    <section aria-labelledby="topics-title">
+        <h2 class="visually-hidden" id="topics-title">Тақырыптар</h2>
+        <div class="topic-grid">
+            <a class="topic-card{% if not active_topic or active_topic == 'all' %} is-active{% endif %}"
+               href="{{ url_for('help', q=q) }}"
+               {% if not active_topic or active_topic == 'all' %}aria-current="true"{% endif %}>
+                {{ icon('layout-dashboard', 20) }}
+                <span>Барлығы</span>
+            </a>
+            {% for topic in topics %}
+            <a class="topic-card{% if active_topic == topic.key %} is-active{% endif %}"
+               href="{{ url_for('help', topic=topic.key, q=q) }}"
+               {% if active_topic == topic.key %}aria-current="true"{% endif %}>
+                {{ icon(topic.icon, 20) }}
+                <span>{{ topic.label }}</span>
+                <span class="pill">{{ topic.count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="help-layout">
+        <section class="panel faq" aria-labelledby="faq-title">
+            <div class="panel-head">
+                <h2 id="faq-title">Жиі қойылатын сұрақтар</h2>
+                {{ icon('chevron-down', 18) }}
+            </div>
+            <p class="answer-note">{{ icon('info', 15) }} Жауаптар ең жиі кездесетін сұрақтар бойынша топтастырылған.</p>
+
+            {% if faq %}
+            <div class="faq-list">
+                {% for item in faq %}
+                <details class="faq-item" id="faq-{{ item.id }}">
+                    <summary class="faq-q">
+                        <span>{{ item.q }}</span>
+                        {{ icon('chevron-down', 16) }}
+                    </summary>
+                    <div class="faq-a">
+                        {% for topic in topics %}
+                        {% if topic.key == item.topic %}<p class="hint"><span class="pill">{{ topic.label }}</span></p>{% endif %}
+                        {% endfor %}
+                        <p>{{ item.a }}</p>
+                    </div>
+                </details>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state empty-state-sm">
+                {{ icon('info', 24) }}
+                <h2>Сұрақтар табылмады</h2>
+                <p>Басқа сөзбен іздеп көріңіз немесе төменде қолдау қызметіне жазыңыз.</p>
+                <a class="btn btn-ghost btn-sm" href="{{ url_for('help') }}">Іздеуді тазалау</a>
+            </div>
+            {% endif %}
+        </section>
+
+        <aside class="panel contact-panel" id="contact" aria-labelledby="contact-title">
+            <div class="panel-head">
+                <h2 id="contact-title">Бізге жазыңыз</h2>
+                {{ icon('mail', 18) }}
+            </div>
+            <p class="panel-sub">Сұрағыңызға жауап таппадыңыз ба? Хабарлама қалдырыңыз.</p>
+            <p class="answer-note">{{ icon('clock', 15) }} Жауап әдетте бір жұмыс күні ішінде келеді.</p>
+
+            <div class="profile-note">
+                {{ icon('mail', 20) }}
+                <div>
+                    <strong>Қолдау байланысы</strong>
+                    <p><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+                    <p class="hint">{{ icon('phone', 13) }} Қоңыраулар қабылданбайды — хабарлама жіберіңіз.</p>
+                </div>
+            </div>
+
+            <form class="settings-form" method="POST" action="{{ url_for('help_message') }}"
+                  enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="field">
+                    <label for="message-email">Электрондық пошта</label>
+                    <div class="input-wrap">
+                        <input type="email" id="message-email" name="email"
+                               value="{{ message_form.get('email', '') }}"
+                               placeholder="aidana@pochta.kz" maxlength="254"
+                               autocomplete="email" required>
+                        <span class="input-icon">{{ icon('mail', 18) }}</span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="message-subject">Тақырып</label>
+                    <select id="message-subject" name="subject" required>
+                        <option value="Бюджет туралы сұрақ"{% if message_form.get('subject') == 'Бюджет туралы сұрақ' %} selected{% endif %}>Бюджет туралы сұрақ</option>
+                        <option value="Карталар мен шоттар"{% if message_form.get('subject') == 'Карталар мен шоттар' %} selected{% endif %}>Карталар мен шоттар</option>
+                        <option value="Тіркелгі қауіпсіздігі"{% if message_form.get('subject') == 'Тіркелгі қауіпсіздігі' %} selected{% endif %}>Тіркелгі қауіпсіздігі</option>
+                        <option value="Басқа"{% if message_form.get('subject') == 'Басқа' %} selected{% endif %}>Басқа</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="message-text">Хабарлама</label>
+                    <textarea id="message-text" name="message" rows="5" maxlength="2000"
+                              placeholder="Сұрағыңызды толығырақ жазыңыз" required>{{ message_form.get('message', '') }}</textarea>
+                </div>
+
+                <div class="field">
+                    <label for="message-attachment">Тіркеме <span class="optional">міндетті емес</span></label>
+                    <input type="file" id="message-attachment" name="attachment"
+                           accept=".pdf,.png,.jpg,.jpeg,.txt,.docx" aria-describedby="attachment-hint">
+                    <p class="hint" id="attachment-hint">{{ icon('info', 13) }} PDF, PNG, JPG, TXT немесе DOCX. Файл көлемі 10 МБ-дан аспауы керек.</p>
+                </div>
+
+                <div class="setting-row">
+                    <div class="setting-row-copy">
+                        <strong>Келісім</strong>
+                        <p>Дербес деректерді өңдеуге келісесіз бе?</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="consent" required>
+                        <span class="toggle-track" aria-hidden="true"></span>
+                        <span class="visually-hidden">Дербес деректерді өңдеуге келісемін</span>
+                    </label>
+                </div>
+
+                <button class="btn btn-primary btn-block" type="submit">
+                    {{ icon('mail', 17) }} Хабарламаны жіберу
+                </button>
+            </form>
+
+            {% if support_messages %}
+            <section class="support-history-wrap" aria-labelledby="history-title">
+                <h2 id="history-title">Соңғы хабарламалар</h2>
+                <ul class="support-history">
+                    {% for msg in support_messages %}
+                    {% set status_key = msg.status|string|lower %}
+                    {% set status_label = {'new': 'Жаңа', 'open': 'Ашық', 'pending': 'Қаралуда', 'answered': 'Жауап берілді', 'resolved': 'Шешілді', 'closed': 'Жабық'}.get(status_key, msg.status) %}
+                    <li>
+                        <div>
+                            <strong>{{ msg.subject }}</strong>
+                            <span>{{ msg.created_at }}</span>
+                        </div>
+                        <span class="pill{% if status_key in ('answered', 'resolved') %} pill-green{% elif status_key in ('new', 'open', 'pending') %} pill-orange{% endif %}">{{ status_label }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </section>
+            {% endif %}
+        </aside>
+    </div>
+</div>
+{% endblock %}

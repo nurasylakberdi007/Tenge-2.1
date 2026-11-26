@@ -1,13 +1,24 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}Қате {{ code }}{% endblock %}
+{% block page_title %}Қате {{ code }}{% endblock %}
 
 {% block content %}
-<main class="container container-narrow">
-    <section class="panel empty error-panel">
-        <h1>{{ code }}</h1>
-        <p>{{ message }}</p>
-        <p><a class="btn" href="{{ url_for('index') }}">Басты бетке оралу</a></p>
+<div class="error-wrap">
+    <section class="error-card" aria-labelledby="error-title">
+        <span class="feature-icon">{{ icon('info', 24) }}</span>
+        <p class="error-code">{{ code }}</p>
+        <h1 id="error-title">{{ message }}</h1>
+        <p class="error-note">Қажет болса, басты бетке оралып, әрекетті қайталап көріңіз.</p>
+        <div class="hero-actions">
+            {% if g.user %}
+                <a class="btn btn-primary" href="{{ url_for('index') }}">Басты бетке оралу</a>
+            {% else %}
+                <a class="btn btn-primary" href="{{ url_for('login') }}">Кіру</a>
+            {% endif %}
+            <a class="btn btn-ghost" href="{{ url_for('about') }}">Жоба туралы</a>
+        </div>
     </section>
-</main>
+</div>
 {% endblock %}

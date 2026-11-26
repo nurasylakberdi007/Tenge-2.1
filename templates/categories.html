@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Санаттар{% endblock %}
+{% block page_title %}Санаттар{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <p class="page-sub">Кіріс пен шығыстың санаттарын реттеңіз: атауын, белгішесін және түсін өзгертіңіз.</p>
+    <span class="pill pill-cyan">{{ icon('settings-2', 14) }} {{ categories|length }} санат</span>
+</div>
+
+<nav class="settings-tabs" id="category-tabs" aria-label="Санаттар бөлімдері">
+    <a class="settings-tab{% if tab == 'expense' %} is-active{% endif %}"
+       href="{{ url_for('categories', tab='expense') }}"
+       {% if tab == 'expense' %}aria-current="page"{% endif %}>
+        Шығындар · {{ counts.get('expense', 0) }}
+    </a>
+    <a class="settings-tab{% if tab == 'income' %} is-active{% endif %}"
+       href="{{ url_for('categories', tab='income') }}"
+       {% if tab == 'income' %}aria-current="page"{% endif %}>
+        Кірістер · {{ counts.get('income', 0) }}
+    </a>
+    <a class="settings-tab{% if tab == 'archive' %} is-active{% endif %}"
+       href="{{ url_for('categories', tab='archive') }}"
+       {% if tab == 'archive' %}aria-current="page"{% endif %}>
+        Архив · {{ counts.get('archive', 0) }}
+    </a>
+</nav>
+
+{% if categories %}
+    <section class="category-grid" aria-label="Санаттар тізімі">
+        {% for cat in categories %}
+            <article class="category-card">
+                <div class="category-card-head">
+                    <span class="category-avatar" style="--cat-color: {{ cat.color }}">
+                        {{ icon(cat.icon, 20) }}
+                    </span>
+                    <div class="category-card-title">
+                        <h2 class="category-name">{{ cat.name }}</h2>
+                        <span class="category-key">{{ cat.key }}</span>
+                    </div>
+                    {% if cat.is_default %}
+                        <span class="pill">{{ icon('shield-check', 13) }} Негізгі</span>
+                    {% elif cat.archived %}
+                        <span class="pill pill-orange">Архивте</span>
+                    {% endif %}
+                </div>
+
+                <div class="category-card-stats">
+                    <div>
+                        <span>{{ 'Жұмсалды' if cat.type == 'expense' else 'Алынды' }}</span>
+                        <strong class="{{ 'text-orange' if cat.type == 'expense' else 'text-green' }}">
+                            {{ (cat.spent if cat.type == 'expense' else cat.earned) | money }} ₸
+                        </strong>
+                    </div>
+                    <div>
+                        <span>Операциялар</span>
+                        <strong>{{ cat.tx_count }}</strong>
+                    </div>
+                </div>
+
+                <div class="category-card-actions">
+                    <a class="btn btn-ghost btn-sm"
+                       href="{{ url_for('categories', tab=tab, edit=cat.id) }}#category-form">
+                        {{ icon('settings-2', 15) }} Өңдеу
+                    </a>
+                    {% if not cat.is_default %}
+                        <form action="{{ url_for('delete_category', category_id=cat.id) }}" method="POST"
+                              data-confirm="«{{ cat.name }}» санатын жою керек пе?">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-danger btn-sm" type="submit">
+                                {{ icon('trash-2', 15) }} Жою
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+    </section>
+{% else %}
+    <section class="panel empty-state">
+        {{ icon('layout-dashboard', 32) }}
+        <h2>Бұл бөлімде санаттар жоқ</h2>
+        <p>Төмендегі формадан жаңа санат қосыңыз немесе басқа бөлімді таңдаңыз.</p>
+        <a class="btn btn-ghost btn-sm" href="#add-category">{{ icon('plus', 16) }} Санат қосу</a>
+    </section>
+{% endif %}
+
+<div class="content-grid">
+    <div class="content-grid-main">
+        <section class="panel category-panel" id="category-form" aria-labelledby="category-form-title">
+            <div class="panel-head">
+                <h2 id="category-form-title">Санатты өңдеу</h2>
+                <span class="pill pill-cyan">{{ icon('save', 13) }} №{{ form.id }}</span>
+            </div>
+            <p class="panel-sub">Таңдалған санаттың атауы, түрі, белгішесі мен түсі өзгертіледі.</p>
+
+            {% if form.id %}
+            <form action="{{ url_for('edit_category', category_id=form.id) }}" method="POST" class="form-grid">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="field field-wide">
+                    <label for="edit-category-name">Санат атауы</label>
+                    <input type="text" id="edit-category-name" name="name" maxlength="50"
+                           value="{{ form.name }}" placeholder="Мысалы, Тамақтану" autocomplete="off" required>
+                </div>
+
+                <div class="field">
+                    <label for="edit-category-type">Түрі</label>
+                    <select id="edit-category-type" name="type">
+                        <option value="expense"{% if form.type == 'expense' %} selected{% endif %}>Шығыс</option>
+                        <option value="income"{% if form.type == 'income' %} selected{% endif %}>Кіріс</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="edit-category-icon">Белгіше</label>
+                    <select id="edit-category-icon" name="icon">
+                        {% for choice in icon_choices %}
+                            <option value="{{ choice }}"{% if form.icon == choice %} selected{% endif %}>{{ choice }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="hint">{{ icon(form.icon, 16) }} <span>Таңдалған белгіше санат картасында көрсетіледі.</span></p>
+                </div>
+
+                {% set edit_colors = color_choices if form.color in color_choices else ([form.color] + color_choices) %}
+                <div class="field field-wide">
+                    <label for="edit-color-0">Түс</label>
+                    <div class="swatch-row" role="radiogroup" aria-label="Санат түсі">
+                        {% for color in edit_colors %}
+                            <label class="swatch" style="background: {{ color }}"
+                                   title="{{ color }}">
+                                <input type="radio" id="edit-color-{{ loop.index0 }}" name="color"
+                                       value="{{ color }}"{% if form.color == color %} checked{% endif %}>
+                                <span class="visually-hidden">{{ color }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="field field-wide">
+                    <label class="setting-row" for="edit-category-archived">
+                        <span class="setting-row-copy">
+                            <strong>Архивтеу</strong>
+                            <span>Архивтелген санат жаңа операцияларда ұсынылмайды.</span>
+                        </span>
+                        <input type="checkbox" id="edit-category-archived" name="archived" value="1"
+                               {% if form.archived %}checked{% endif %}>
+                    </label>
+                </div>
+
+                <div class="form-actions field-wide">
+                    <button class="btn btn-primary" type="submit">{{ icon('save', 17) }} Өзгерістерді сақтау</button>
+                    <a class="btn btn-ghost" href="{{ url_for('categories', tab=tab) }}">Болдырмау</a>
+                </div>
+            </form>
+            {% else %}
+            <div class="empty-state empty-state-sm">
+                {{ icon('info', 26) }}
+                <p>Өңдеу үшін алдымен санат картасын таңдаңыз немесе жаңа санат қосыңыз.</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="content-grid-side">
+        <section class="panel category-panel" id="add-category" aria-labelledby="add-category-title">
+            <div class="panel-head">
+                <h2 id="add-category-title">Жаңа санат</h2>
+                {{ icon('plus', 18) }}
+            </div>
+            <p class="panel-sub">Өз санатыңызды қосып, оны белгіше мен түспен ерекшелеңіз.</p>
+
+            <form action="{{ url_for('create_category') }}" method="POST" class="settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="field">
+                    <label for="new-category-name">Санат атауы</label>
+                    <input type="text" id="new-category-name" name="name" maxlength="50"
+                           placeholder="Мысалы, Кофейня" autocomplete="off" required>
+                </div>
+
+                <div class="field">
+                    <label for="new-category-type">Түрі</label>
+                    <select id="new-category-type" name="type">
+                        <option value="expense"{% if tab != 'income' %} selected{% endif %}>Шығыс</option>
+                        <option value="income"{% if tab == 'income' %} selected{% endif %}>Кіріс</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="new-category-icon">Белгіше</label>
+                    <select id="new-category-icon" name="icon">
+                        {% for choice in icon_choices %}
+                            <option value="{{ choice }}">{{ choice }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="new-color-0">Түс</label>
+                    <div class="swatch-row" role="radiogroup" aria-label="Жаңа санат түсі">
+                        {% for color in color_choices %}
+                            <label class="swatch" style="background: {{ color }}" title="{{ color }}">
+                                <input type="radio" id="new-color-{{ loop.index0 }}" name="color"
+                                       value="{{ color }}"{% if loop.first %} checked{% endif %}>
+                                <span class="visually-hidden">{{ color }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-block" type="submit">
+                    {{ icon('plus', 17) }} Санатты қосу
+                </button>
+            </form>
+        </section>
+
+        <section class="panel" aria-labelledby="category-tip-title">
+            <div class="panel-head">
+                <h2 id="category-tip-title">Пайдалы ақпарат</h2>
+                {{ icon('info', 18) }}
+            </div>
+            <p class="panel-sub">Негізгі санаттарды өңдеуге болады, бірақ оларды жою мүмкін емес. Архивтелген санаттар есепте көрінеді, бірақ жаңа операцияларда ұсынылмайды.</p>
+            <p class="hint">{{ icon('shield-check', 13) }} <span>Өзгерістер осы тіркелгіге ғана қолданылады.</span></p>
+        </section>
+    </div>
+</div>
+{% endblock %}

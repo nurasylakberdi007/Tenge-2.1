@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Баптаулар{% endblock %}
+{% block page_title %}Баптаулар{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <p class="page-sub">Tenge кеңістігін өзіңізге бейімдеңіз.</p>
+</div>
+
+<nav class="settings-tabs" id="settings-tabs" aria-label="Баптау бөлімдері">
+    <a class="settings-tab{% if active_tab == 'general' %} is-active{% endif %}"
+       href="{{ url_for('settings', tab='general') }}#general"
+       data-settings-tab="general"{% if active_tab == 'general' %} aria-current="true"{% endif %}>Жалпы</a>
+    <a class="settings-tab{% if active_tab == 'security' %} is-active{% endif %}"
+       href="{{ url_for('settings', tab='security') }}#security"
+       data-settings-tab="security"{% if active_tab == 'security' %} aria-current="true"{% endif %}>Қауіпсіздік</a>
+    <a class="settings-tab{% if active_tab == 'data' %} is-active{% endif %}"
+       href="{{ url_for('settings', tab='data') }}#data"
+       data-settings-tab="data"{% if active_tab == 'data' %} aria-current="true"{% endif %}>Деректер</a>
+</nav>
+
+<div class="settings-panel{% if active_tab == 'general' %} is-active{% endif %}"
+     id="general" data-settings-panel="general">
+    <div class="settings-grid">
+        <div class="settings-main">
+            <section class="panel" aria-labelledby="settings-locale-title">
+                <div class="panel-head">
+                    <h2 id="settings-locale-title">Тіл және аймақ</h2>
+                    {{ icon('globe', 18) }}
+                </div>
+
+                <dl class="info-list">
+                    <div><dt>Интерфейс тілі</dt><dd>Қазақша</dd></div>
+                    <div><dt>Негізгі валюта</dt><dd>Теңге · ₸</dd></div>
+                    <div><dt>Уақыт белдеуі</dt><dd>Алматы · +05:00</dd></div>
+                </dl>
+
+                <p class="hint">{{ icon('info', 13) }} Интерфейс қазақ тілінде және теңге бағамында жұмыс істейді.</p>
+            </section>
+
+            <section class="panel" aria-labelledby="settings-view-title">
+                <div class="panel-head">
+                    <h2 id="settings-view-title">Көрініс және есеп жүргізу</h2>
+                    {{ icon('settings-2', 18) }}
+                </div>
+
+                <form action="{{ url_for('save_preferences') }}" method="POST" class="settings-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="field">
+                        <label for="date_format">Күн пішімі</label>
+                        <select id="date_format" name="date_format">
+                            <option value="dmy"{% if g.user.date_format == 'dmy' %} selected{% endif %}>31.10.2026 (күн.ай.жыл)</option>
+                            <option value="iso"{% if g.user.date_format == 'iso' %} selected{% endif %}>2026-10-31 (жыл-ай-күн)</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-row-copy">
+                            <strong>Балансты жасыру</strong>
+                            <p>Барлық бетте сомаларды бүркемелеп көрсету.</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" name="hide_balances"{% if g.user.hide_balances %} checked{% endif %}>
+                            <span class="toggle-track" aria-hidden="true"></span>
+                            <span class="visually-hidden">Балансты жасыру</span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary" type="submit">
+                            {{ icon('check', 17) }} Баптауларды сақтау
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <aside class="settings-side">
+            <section class="profile-note" aria-labelledby="settings-note-title">
+                {{ icon('info', 22) }}
+                <div>
+                    <strong id="settings-note-title">Өзгерістер сізге ғана қатысты</strong>
+                    <p>Баптаулар осы тіркелгімен кірген барлық құрылғыда қолданылады.</p>
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>
+
+<div class="settings-panel{% if active_tab == 'security' %} is-active{% endif %}"
+     id="security" data-settings-panel="security">
+    <div class="settings-grid">
+        <div class="settings-main">
+            <section class="panel" aria-labelledby="settings-password-title">
+                <div class="panel-head">
+                    <h2 id="settings-password-title">Құпиясөзді өзгерту</h2>
+                    {{ icon('key-round', 18) }}
+                </div>
+
+                <form class="form-grid" action="{{ url_for('change_password') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="field field-wide">
+                        <label for="current_password">Ағымдағы құпиясөз</label>
+                        <div class="input-wrap">
+                            <input type="password" id="current_password" name="current_password"
+                                   placeholder="••••••••" autocomplete="current-password" required>
+                            <button class="input-icon input-icon-btn" type="button" data-password-toggle
+                                    data-target="current_password" aria-label="Құпиясөзді көрсету" aria-pressed="false">
+                                <span data-eye-show>{{ icon('eye', 18) }}</span>
+                                <span data-eye-hide class="is-hidden">{{ icon('eye-off', 18) }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="new_password">Жаңа құпиясөз</label>
+                        <div class="input-wrap">
+                            <input type="password" id="new_password" name="new_password" minlength="8"
+                                   maxlength="128" placeholder="Кемінде 8 таңба"
+                                   autocomplete="new-password" required>
+                            <button class="input-icon input-icon-btn" type="button" data-password-toggle
+                                    data-target="new_password" aria-label="Құпиясөзді көрсету" aria-pressed="false">
+                                <span data-eye-show>{{ icon('eye', 18) }}</span>
+                                <span data-eye-hide class="is-hidden">{{ icon('eye-off', 18) }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="new_password_confirm">Жаңа құпиясөзді қайталау</label>
+                        <div class="input-wrap">
+                            <input type="password" id="new_password_confirm" name="new_password_confirm"
+                                   minlength="8" maxlength="128" placeholder="Құпиясөзді қайталаңыз"
+                                   autocomplete="new-password" required>
+                            <button class="input-icon input-icon-btn" type="button" data-password-toggle
+                                    data-target="new_password_confirm" aria-label="Құпиясөзді көрсету" aria-pressed="false">
+                                <span data-eye-show>{{ icon('eye', 18) }}</span>
+                                <span data-eye-hide class="is-hidden">{{ icon('eye-off', 18) }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-actions field-wide">
+                        <button class="btn btn-primary" type="submit">
+                            {{ icon('key-round', 17) }} Құпиясөзді жаңарту
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <aside class="settings-side">
+            <section class="panel" aria-labelledby="settings-login-title">
+                <div class="panel-head">
+                    <h2 id="settings-login-title">Соңғы белсенділік</h2>
+                    {{ icon('clock', 18) }}
+                </div>
+
+                <dl class="info-list">
+                    <div>
+                        <dt>Соңғы кіру</dt>
+                        <dd>{% if g.user.last_login_at %}{{ g.user.last_login_at | date_kz }}{% else %}—{% endif %}</dd>
+                    </div>
+                    <div>
+                        <dt>Құпиясөз өзгертілді</dt>
+                        <dd>{% if g.user.password_changed_at %}{{ g.user.password_changed_at | date_kz }}{% else %}—{% endif %}</dd>
+                    </div>
+                    <div>
+                        <dt>Тіркелгі құрылды</dt>
+                        <dd>{{ g.user.created_at | date_kz }}</dd>
+                    </div>
+                </dl>
+
+                <p class="hint">{{ icon('shield-check', 13) }} Құпиясөздер хэштелген түрде сақталады және ешбір құрылғыда ашық көрсетілмейді.</p>
+            </section>
+        </aside>
+    </div>
+</div>
+
+<div class="settings-panel{% if active_tab == 'data' %} is-active{% endif %}"
+     id="data" data-settings-panel="data">
+    <div class="settings-grid">
+        <div class="settings-main">
+            <section class="panel" aria-labelledby="settings-export-title">
+                <div class="panel-head">
+                    <h2 id="settings-export-title">Менің деректерім</h2>
+                    {{ icon('database', 18) }}
+                </div>
+
+                <p class="panel-sub">Операцияларыңыздың көшірмесін CSV файлы ретінде жүктеп алыңыз.</p>
+
+                <dl class="info-list">
+                    <div><dt>Карталар</dt><dd>{{ stats.cards_count }}</dd></div>
+                    <div><dt>Операциялар</dt><dd>{{ stats.tx_count }}</dd></div>
+                </dl>
+
+                <div class="form-actions">
+                    <a class="btn btn-ghost" href="{{ url_for('export_transactions') }}">
+                        {{ icon('download', 17) }} Деректерді жүктеу
+                    </a>
+                </div>
+
+                <p class="hint">{{ icon('info', 13) }} Файл UTF-8 кодтауында, Excel-де дұрыс ашылады.</p>
+            </section>
+        </div>
+
+        <aside class="settings-side">
+            <section class="panel danger-panel" aria-labelledby="settings-danger-title">
+                <div class="panel-head">
+                    <h2 id="settings-danger-title">Қауіпті аймақ</h2>
+                    {{ icon('alert-triangle', 18) }}
+                </div>
+
+                <p class="panel-sub">Тіркелгіні жою барлық карталар мен операцияларды өшіреді. Бұл әрекетті қайтару мүмкін емес.</p>
+
+                <form action="{{ url_for('delete_account') }}" method="POST" class="settings-form"
+                      data-confirm="Тіркелгіңізді толығымен жою керек пе? Бұл әрекетті қайтару мүмкін емес.">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="field">
+                        <label for="delete_password">Ағымдағы құпиясөз</label>
+                        <input type="password" id="delete_password" name="password"
+                               placeholder="••••••••" autocomplete="current-password" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="delete_confirmation">Растау үшін «ЖОЮ» деп жазыңыз</label>
+                        <input type="text" id="delete_confirmation" name="confirmation"
+                               placeholder="ЖОЮ" maxlength="3" autocomplete="off" required>
+                    </div>
+
+                    <button class="btn btn-danger btn-block" type="submit">
+                        {{ icon('trash-2', 16) }} Тіркелгіні жою
+                    </button>
+                </form>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}

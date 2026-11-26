@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ preview.title }} — Tenge</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 40px 32px;
+            font-family: "Roboto", Arial, sans-serif;
+            color: #16202e;
+            background: #ffffff;
+            font-size: 13px;
+        }
+        .print-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            border-bottom: 2px solid #1b2028;
+            padding-bottom: 18px;
+            margin-bottom: 24px;
+        }
+        .print-brand {
+            font-family: "Poppins", Arial, sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .print-meta {
+            text-align: right;
+            color: #5b6676;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        h1 {
+            font-size: 20px;
+            margin: 0 0 6px;
+        }
+        .print-note {
+            color: #5b6676;
+            margin: 0 0 24px;
+        }
+        .print-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .print-summary > div {
+            flex: 1 1 160px;
+            border: 1px solid #d8dee7;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .print-summary span {
+            display: block;
+            color: #5b6676;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+        .print-summary strong {
+            font-size: 17px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 9px 10px;
+            border-bottom: 1px solid #e4e9f0;
+            vertical-align: top;
+        }
+        th {
+            background: #f3f6fa;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #465266;
+        }
+        tbody tr:nth-child(even) { background: #fafbfd; }
+        .print-foot {
+            margin-top: 36px;
+            padding-top: 14px;
+            border-top: 1px solid #d8dee7;
+            color: #5b6676;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+        }
+        @media print {
+            body { padding: 0; font-size: 11px; }
+            @page { margin: 16mm; }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-head">
+        <div>
+            <div class="print-brand">Tenge</div>
+            <div style="font-size:11px;color:#5b6676;margin-top:4px">Қаржылық есеп</div>
+        </div>
+        <div class="print-meta">
+            Құрылған: {{ generated_at }}<br>
+            Операциялар: {{ preview.tx_count }}
+        </div>
+    </div>
+
+    <h1>{{ preview.title }}</h1>
+    <p class="print-note">{{ preview.note }}</p>
+
+    <div class="print-summary">
+        <div><span>Кіріс</span><strong>{{ preview.income / 100 }}</strong> ₸</div>
+        <div><span>Шығыс</span><strong>{{ preview.expense / 100 }}</strong> ₸</div>
+        <div><span>Таза жинақ</span><strong>{{ preview.net / 100 }}</strong> ₸</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>{% for header in preview.headers %}<th>{{ header }}</th>{% endfor %}</tr>
+        </thead>
+        <tbody>
+            {% for row in preview.rows %}
+            <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+            {% else %}
+            <tr><td colspan="{{ preview.headers|length }}">Бұл кезеңде операциялар жоқ.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="print-foot">
+        <span>Tenge — жеке қаржыңызды басқару құралы</span>
+        <span>{{ generated_at }}</span>
+    </div>
+</body>
+</html>

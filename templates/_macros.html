@@ -1,29 +1,66 @@
-{# Операциялар тізіміндегі бір жол. Импорт: {% from "_macros.html" import transaction_row with context %} #}
-{% macro transaction_row(t, next_page="index", show_card=false) %}
+{# Ортақ UI-макрослар. Импорт: {% from "_macros.html" import transaction_row, pay_card with context %} #}
+{% from "_icons.html" import icon %}
+
+{% macro pay_card(card, username, href=None, selected=false) %}
+<a class="pay-card tone-{{ card['id'] % 5 }}{% if selected %} is-selected{% endif %}"
+   href="{{ href if href is not none else url_for('cards', card=card['id']) }}"
+   {% if selected %}aria-current="true"{% endif %}>
+    <span class="pay-card-top">
+        <span class="pay-card-name">{{ card['name'] }}</span>
+        <span class="card-chip" aria-hidden="true"></span>
+    </span>
+    <span class="pay-card-balance">{{ card['balance'] | money }} <span class="unit">₸</span></span>
+    <span class="pay-card-number">•••• •••• •••• {{ card['last_four'] }}</span>
+    <span class="pay-card-bottom">
+        <span class="pay-card-holder">{{ username | upper }}</span>
+        <span class="pay-card-bank">{{ card['bank_name'] }}</span>
+    </span>
+</a>
+{% endmacro %}
+
+{% macro transaction_row(t, next_page="index", show_card=false, allow_delete=true) %}
 <li class="tx tx-{{ t['type'] }}">
-    <span class="tx-sign" aria-hidden="true">{{ '+' if t['type'] == 'income' else '−' }}</span>
+    <span class="tx-icon" aria-hidden="true">
+        {{ icon('arrow-down-left' if t['type'] == 'income' else 'arrow-up-right', 17) }}
+    </span>
 
-    <div class="tx-main">
+    <span class="tx-main">
         <strong>{{ all_categories.get(t['category'], t['category']) }}</strong>
-        <span class="tx-note">{{ t['description'] or 'Сипаттамасыз' }}</span>
-        <span class="tx-meta">
-            <span>{{ 'Кіріс' if t['type'] == 'income' else 'Шығыс' }}, {{ t['created_at'] | date_kz }}</span>
-            {% if show_card and t['card_name'] %}
-                <span class="tag">{{ t['card_name'] }} **** {{ t['card_last_four'] }}</span>
-            {% endif %}
+        <span class="tx-note">
+            {{ t['description'] or 'Сипаттамасыз' }}{% if show_card and t['card_name'] %} · {{ t['card_name'] }} •••• {{ t['card_last_four'] }}{% endif %}
         </span>
-    </div>
+    </span>
 
-    <div class="tx-side">
-        <span class="tx-amount">
-            {{ '+' if t['type'] == 'income' else '−' }}{{ t['amount'] | money }} ₸
-        </span>
-        <form class="tx-delete" action="{{ url_for('delete_transaction', transaction_id=t['id']) }}"
-              method="POST" data-confirm="Бұл операцияны жою керек пе? Баланс қайта есептеледі.">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="next" value="{{ next_page }}">
-            <button class="icon-btn" type="submit" aria-label="Операцияны жою">×</button>
-        </form>
-    </div>
+    <span class="tx-date">{{ t['created_at'] | date_kz }}</span>
+    <span class="tx-amount">{{ '+' if t['type'] == 'income' else '−' }}{{ t['amount'] | money }} ₸</span>
+
+    {% if allow_delete %}
+    <form class="tx-delete" action="{{ url_for('delete_transaction', transaction_id=t['id']) }}"
+          method="POST" data-confirm="Бұл операцияны жою керек пе? Баланс қайта есептеледі.">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ next_page }}">
+        <button class="tx-delete-btn" type="submit" aria-label="Операцияны жою">
+            {{ icon('trash-2', 16) }}
+        </button>
+    </form>
+    {% else %}
+    <span></span>
+    {% endif %}
 </li>
+{% endmacro %}
+
+{% macro tx_table(transactions, next_page="index", show_card=false, allow_delete=true) %}
+<div class="tx-table">
+    <div class="tx-head" aria-hidden="true">
+        <span>Операция</span>
+        <span>Күні</span>
+        <span class="tx-amount">Сома</span>
+        <span></span>
+    </div>
+    <ul class="tx-list">
+        {% for t in transactions %}
+            {{ transaction_row(t, next_page, show_card, allow_delete) }}
+        {% endfor %}
+    </ul>
+</div>
 {% endmacro %}

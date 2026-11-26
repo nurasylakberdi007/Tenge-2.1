@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}Жеке профиль{% endblock %}
+{% block page_title %}Жеке профиль{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+    <p class="page-sub">Жеке деректеріңіз бен тіркелгіңізді басқарыңыз.</p>
+</div>
+
+<div class="profile-layout">
+    <aside class="profile-side">
+        <section class="panel profile-card" aria-labelledby="profile-name">
+            <span class="profile-avatar" aria-hidden="true">{{ g.user.username | initials }}</span>
+
+            <div class="profile-card-copy">
+                <h2 id="profile-name">{{ g.user.username }}</h2>
+                <p class="profile-location">
+                    {{ icon('map-pin', 15) }}
+                    <span>{% if g.user.city %}{{ g.user.city }}, {% endif %}Қазақстан</span>
+                </p>
+            </div>
+
+            <span class="profile-status">{{ icon('shield-check', 14) }} Белсенді тіркелгі</span>
+
+            <div class="divider" aria-hidden="true"></div>
+
+            <dl class="profile-facts">
+                <div class="profile-fact">
+                    <dt>Қосылған күні</dt>
+                    <dd>{{ g.user.created_at | date_kz }}</dd>
+                </div>
+                <div class="profile-fact">
+                    <dt>Карталар саны</dt>
+                    <dd>{{ stats.cards_count }}</dd>
+                </div>
+                <div class="profile-fact">
+                    <dt>Операциялар</dt>
+                    <dd>{{ stats.tx_count }}</dd>
+                </div>
+                <div class="profile-fact">
+                    <dt>Негізгі валюта</dt>
+                    <dd>Теңге · ₸</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="profile-note" aria-labelledby="profile-privacy-title">
+            {{ icon('info', 22) }}
+            <div>
+                <strong id="profile-privacy-title">Деректеріңіз құпия</strong>
+                <p>Жеке мәліметтеріңіз басқа пайдаланушыларға көрсетілмейді.</p>
+            </div>
+        </section>
+
+        <section class="profile-note profile-note-accent" aria-labelledby="profile-habit-title">
+            {{ icon('piggy-bank', 22) }}
+            <div>
+                <strong id="profile-habit-title">Қаржыңыздағы тәртіп</strong>
+                <p>
+                    {% if months_active > 0 %}
+                        {{ months_active }} ай бойы есеп жүргізіп келесіз. Жақсы әдет — үлкен нәтижеге бастайды.
+                    {% else %}
+                        Бүгін бастадыңыз. Әрбір жазылған операция — қаржыңыздың нақты көрінісіне қадам.
+                    {% endif %}
+                </p>
+            </div>
+        </section>
+    </aside>
+
+    <div class="profile-main">
+        <section class="panel" aria-labelledby="profile-form-title">
+            <div class="panel-head">
+                <h2 id="profile-form-title">Жеке мәліметтер</h2>
+                {{ icon('user', 18) }}
+            </div>
+
+            <form class="form-grid" action="{{ url_for('profile') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="field">
+                    <label for="first_name">Атыңыз</label>
+                    <input type="text" id="first_name" name="first_name" maxlength="40"
+                           value="{{ form.get('first_name', '') }}" placeholder="Айдана"
+                           autocomplete="given-name" required>
+                </div>
+
+                <div class="field">
+                    <label for="last_name">Тегіңіз</label>
+                    <input type="text" id="last_name" name="last_name" maxlength="40"
+                           value="{{ form.get('last_name', '') }}" placeholder="Серікқызы"
+                           autocomplete="family-name">
+                </div>
+
+                <div class="field">
+                    <label for="profile_email">Электрондық пошта</label>
+                    <input type="email" id="profile_email" name="email" maxlength="254"
+                           value="{{ form.get('email', '') }}" placeholder="aidana@pochta.kz"
+                           autocomplete="email" required>
+                </div>
+
+                <div class="field">
+                    <label for="profile_phone">Телефон нөмірі <span class="optional">міндетті емес</span></label>
+                    <input type="tel" id="profile_phone" name="phone" maxlength="24"
+                           value="{{ form.get('phone', '') }}" placeholder="+7 (707) 245-18-36"
+                           autocomplete="tel">
+                </div>
+
+                <div class="field">
+                    <label for="profile_city">Қала <span class="optional">міндетті емес</span></label>
+                    <input type="text" id="profile_city" name="city" maxlength="60"
+                           value="{{ form.get('city', '') }}" placeholder="Алматы"
+                           autocomplete="address-level2">
+                </div>
+
+                <div class="field">
+                    <label for="profile_birth_date">Туған күніңіз <span class="optional">міндетті емес</span></label>
+                    <input type="date" id="profile_birth_date" name="birth_date" max="{{ today }}"
+                           value="{{ form.get('birth_date', '') }}" autocomplete="bday">
+                </div>
+
+                <div class="field field-wide">
+                    <label for="profile_bio">Өзіңіз туралы <span class="optional">міндетті емес</span></label>
+                    <textarea id="profile_bio" name="bio" rows="3" maxlength="300"
+                              placeholder="Қаржымды саналы жоспарлап, алғашқы баспанама жинап жүрмін.">{{ form.get('bio', '') }}</textarea>
+                </div>
+
+                <div class="form-actions field-wide">
+                    <button class="btn btn-primary" type="submit">
+                        {{ icon('check', 17) }} Өзгерістерді сақтау
+                    </button>
+                    <a class="btn btn-ghost" href="{{ url_for('profile') }}">Бас тарту</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel security-summary" aria-labelledby="profile-security-title">
+            <div class="security-summary-left">
+                {{ icon('shield-check', 30) }}
+                <div>
+                    <h2 id="profile-security-title">Тіркелгіңіз қорғалған</h2>
+                    <p>
+                        {% if g.user.password_changed_at %}
+                            Құпиясөз соңғы рет {{ g.user.password_changed_at | date_kz }} өзгертілді.
+                        {% else %}
+                            Құпиясөзді кезең-кезеңімен жаңартып отырыңыз.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <a class="btn btn-ghost" href="{{ url_for('settings', tab='security') }}#security">
+                Қауіпсіздік баптаулары {{ icon('arrow-right', 16) }}
+            </a>
+        </section>
+    </div>
+</div>
+{% endblock %}

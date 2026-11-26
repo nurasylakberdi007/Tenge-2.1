@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% block title %}{% if budget %}Бюджетті өңдеу{% else %}Бюджет құру{% endif %}{% endblock %}
+{% block page_title %}{% if budget %}Бюджетті өңдеу{% else %}Бюджет құру{% endif %}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Навигация">
+    <a href="{{ url_for('budgets', month=month) }}">{{ icon('arrow-left', 15) }} Бюджеттер</a>
+    {{ icon('chevron-right', 14) }}
+    <span>{% if budget %}Бюджетті өңдеу{% else %}Бюджет құру{% endif %}</span>
+</nav>
+
+<div class="page-actions">
+    <p class="page-sub">
+        {% if budget %}
+            Бюджеттің атауын, лимитін және ескерту баптауларын өзгертіңіз.
+        {% else %}
+            Айлық шығыс лимитін белгілеп, қаражатты бақылауды бастаңыз.
+        {% endif %}
+    </p>
+</div>
+
+<div class="budget-form-grid">
+    <section class="panel" aria-labelledby="budget-form-title">
+        <div class="panel-head">
+            <h2 id="budget-form-title">{% if budget %}Бюджетті өңдеу{% else %}Жаңа бюджет{% endif %}</h2>
+            <span class="pill pill-cyan">{{ month }}</span>
+        </div>
+
+        <form class="form-grid" method="POST" data-budget-form
+              action="{% if budget %}{{ url_for('edit_budget', budget_id=budget.id) }}{% else %}{{ url_for('new_budget') }}{% endif %}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="month" value="{{ month }}">
+
+            <div class="field field-wide">
+                <label for="budget-name">Бюджет атауы</label>
+                <input type="text" id="budget-name" name="name" maxlength="80"
+                       value="{{ form.name or '' }}" placeholder="Мысалы: Азық-түлік"
+                       autocomplete="off" required>
+            </div>
+
+            <div class="field">
+                <label for="budget-category">Санат</label>
+                <select id="budget-category" name="category" required>
+                    <option value=""{% if not form.category %} selected{% endif %}>Санатты таңдаңыз</option>
+                    {% for c in categories %}
+                        <option value="{{ c.key }}"
+                                {% if form.category | string == c.key | string %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="budget-amount">Лимит, ₸</label>
+                <input type="text" id="budget-amount" name="amount" inputmode="decimal"
+                       value="{{ form.amount or '' }}" placeholder="100 000" autocomplete="off" required>
+            </div>
+
+            <div class="field">
+                <label for="budget-start">Басталу күні</label>
+                <input type="date" id="budget-start" name="start_date"
+                       value="{{ form.start_date or '' }}" required>
+            </div>
+
+            <div class="field">
+                <label for="budget-end">Аяқталу күні</label>
+                <input type="date" id="budget-end" name="end_date"
+                       value="{{ form.end_date or '' }}" required>
+            </div>
+
+            <div class="field field-wide">
+                <label for="budget-alert">Ескерту шегі</label>
+                <select id="budget-alert" name="alert_percent">
+                    <option value="70"{% if form.alert_percent | string == '70' %} selected{% endif %}>70%</option>
+                    <option value="80"{% if form.alert_percent | string == '80' %} selected{% endif %}>80%</option>
+                    <option value="90"{% if form.alert_percent | string == '90' %} selected{% endif %}>90%</option>
+                </select>
+            </div>
+
+            <div class="field-wide">
+                <div class="switch-row">
+                    <div class="setting-row-copy">
+                        <strong>Хабарландыру жіберу</strong>
+                        <p>Шегіне жеткенде ескерту алыңыз.</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="notify"{% if form.notify %} checked{% endif %}>
+                        <span class="toggle-track" aria-hidden="true"></span>
+                        <span class="visually-hidden">Хабарландыру жіберу</span>
+                    </label>
+                </div>
+
+                <div class="switch-row">
+                    <div class="setting-row-copy">
+                        <strong>Ай сайын қайталау</strong>
+                        <p>Бюджет келесі айда автоматты түрде жаңарады.</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="repeat_monthly"{% if form.repeat_monthly %} checked{% endif %}>
+                        <span class="toggle-track" aria-hidden="true"></span>
+                        <span class="visually-hidden">Ай сайын қайталау</span>
+                    </label>
+                </div>
+
+                <div class="switch-row">
+                    <div class="setting-row-copy">
+                        <strong>Қалдықты кейінгі айға ауыстыру</strong>
+                        <p>Пайдаланылмаған сома келесі бюджетке қосылады.</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="carry_over"{% if form.carry_over %} checked{% endif %}>
+                        <span class="toggle-track" aria-hidden="true"></span>
+                        <span class="visually-hidden">Қалдықты кейінгі айға ауыстыру</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions field-wide">
+                <button class="btn btn-primary" type="submit">
+                    {{ icon('save', 17) }}
+                    {% if budget %}Өзгерістерді сақтау{% else %}Бюджет құру{% endif %}
+                </button>
+                <a class="btn btn-ghost" href="{{ url_for('budgets', month=month) }}">Бас тарту</a>
+            </div>
+        </form>
+
+        <p class="hint">
+            {{ icon('info', 13) }}
+            <span>Лимит — осы кезеңде жұмсауға болатын ең жоғары сома. Күндік норма лимитті күндер санына бөлу арқылы есептеледі.</span>
+        </p>
+    </section>
+
+    <aside class="panel plan-preview" data-budget-preview aria-labelledby="plan-preview-title">
+        <div class="panel-head">
+            <h2 id="plan-preview-title">Алдын ала көрініс</h2>
+            <span class="pill pill-cyan">Жанды</span>
+        </div>
+
+        <div>
+            <span class="hint">Бюджет атауы</span>
+            <p class="plan-preview-value" data-preview-name>{{ preview.name }}</p>
+        </div>
+
+        <div>
+            <span class="hint">Жалпы лимит</span>
+            <p class="plan-preview-value plan-preview-amount" data-preview-amount>{{ preview.amount | money }} ₸</p>
+        </div>
+
+        <div class="plan-row">
+            <span>Күндік норма</span>
+            <strong data-preview-daily>{{ preview.daily | money }} ₸</strong>
+        </div>
+        <div class="plan-row">
+            <span>Ескерту шегі</span>
+            <strong data-preview-threshold>{{ preview.threshold | money }} ₸</strong>
+        </div>
+        <div class="plan-row">
+            <span>Күн саны</span>
+            <strong data-preview-days>{{ preview.days }}</strong>
+        </div>
+
+        <div>
+            <span class="pill pill-cyan">{{ icon('info', 13) }} {{ preview.status_label }}</span>
+        </div>
+
+        <p class="hint">
+            {{ icon('calendar-days', 13) }}
+            <span>{{ form.start_date | date_kz }} — {{ form.end_date | date_kz }}</span>
+        </p>
+        <p class="hint">
+            {{ icon('info', 13) }}
+            <span>Өрістерді толтырғанда көрініс осы жерде жаңарады.</span>
+        </p>
+    </aside>
+</div>
+{% endblock %}
