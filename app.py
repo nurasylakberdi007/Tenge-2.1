@@ -12,7 +12,6 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from email.message import EmailMessage
 from functools import wraps
 from pathlib import Path
-app = Flask(__name__)
 from flask import (
     Flask,
     Response,
